@@ -2,136 +2,177 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
-<title>Calculateur prix Twindis</title>
+<title>Calculateur prix Twindis — Holland Bikes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-/* Layout: one column on phone, form left / result right on desktop. Shop-counter tool: big price, clear verdict, detail below. */
-:root{
-  --bg:#F3F4F6; --surface:#FFFFFF; --ink:#16233F; --muted:#5A6478; --line:#D9DDE5;
-  --accent:#E2621B; --accent-ink:#FFFFFF; --field:#FFFFFF;
-  --ok:#1F7A4D; --ok-bg:#E3F3EA; --warn:#9A5B00; --warn-bg:#FDF0D8; --stop:#B42318; --stop-bg:#FDE7E5;
-  --display:'Archivo', 'Arial Narrow', Arial, sans-serif;
-  --body:'Source Sans 3', 'Segoe UI', Arial, sans-serif;
+/* ── TOKENS (identiques à l'app Second Life) ─────────────── */
+:root {
+  --ink:       #0f1117;
+  --ink-soft:  #4a4e5c;
+  --surface:   #f5f6f8;
+  --white:     #ffffff;
+  --navy:      #00335b;
+  --accent:    #00b37e;
+  --accent-dk: #008f63;
+  --warn:      #e63946;
+  --caution:   #f4a261;
+  --ok:        #00b37e;
+  --na:        #94a3b8;
+  --border:    #e2e4ea;
+  --radius:    10px;
+  --mono:      'Space Mono', monospace;
+  --sans:      'Space Grotesk', Arial, sans-serif;
+  color-scheme: light;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0F1524; --surface:#18213A; --ink:#E9EDF5; --muted:#A3ADC2; --line:#2C3756;
-  --accent:#F07A38; --accent-ink:#14110E; --field:#111A2E;
-  --ok:#5CCB91; --ok-bg:#163527; --warn:#F2B661; --warn-bg:#3A2A10; --stop:#FF8A7E; --stop-bg:#3D1A18; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0F1524; --surface:#18213A; --ink:#E9EDF5; --muted:#A3ADC2; --line:#2C3756;
-  --accent:#F07A38; --accent-ink:#14110E; --field:#111A2E;
-  --ok:#5CCB91; --ok-bg:#163527; --warn:#F2B661; --warn-bg:#3A2A10; --stop:#FF8A7E; --stop-bg:#3D1A18; color-scheme:dark}
-*{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 40px}
-.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
-header{display:flex;flex-direction:column;gap:4px}
-.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
-h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,4vw,36px);line-height:1.1;margin:0;text-wrap:balance}
-header p{margin:0;color:var(--muted);max-width:65ch}
-.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;align-items:start}
-@media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
-h2{font-family:var(--display);font-size:16px;font-weight:700;margin:0;letter-spacing:.02em}
-.field{display:flex;flex-direction:column;gap:6px}
-label{font-weight:600}
-.hint{font-size:13px;color:var(--muted)}
-input[type=number],input[type=text]{font:inherit;font-size:18px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--ink);width:100%;font-variant-numeric:tabular-nums}
-input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.seg input{position:absolute;opacity:0;pointer-events:none}
-.seg label{padding:10px 8px;text-align:center;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted);background:var(--field)}
-.seg label+input+label,.seg input+label~label{border-left:1px solid var(--line)}
-.seg input:checked+label{background:var(--ink);color:var(--bg)}
-.seg input:focus-visible+label{outline:3px solid var(--accent);outline-offset:-3px}
-.row{display:flex;gap:10px;flex-wrap:wrap}
-button{font:inherit;font-weight:600;border-radius:8px;padding:10px 14px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
-button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.result-top{display:flex;flex-direction:column;gap:10px}
-.price-label{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.price{font-family:var(--display);font-weight:800;font-size:clamp(48px,9vw,72px);line-height:1;font-variant-numeric:tabular-nums}
-.pill{display:inline-flex;align-items:center;gap:8px;font-weight:700;padding:6px 12px;border-radius:999px;width:fit-content}
-.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.stop{background:var(--stop-bg);color:var(--stop)}
-.notes{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
-.notes li{padding:10px 12px;border-radius:8px;font-size:15px}
-.notes li.warn{background:var(--warn-bg);color:var(--warn)} .notes li.stop{background:var(--stop-bg);color:var(--stop)} .notes li.info{background:var(--bg);color:var(--ink)}
-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-td{padding:8px 0;border-bottom:1px solid var(--line);vertical-align:top}
-td:last-child{text-align:right;white-space:nowrap;font-weight:600;padding-left:12px}
-tr.total td{font-weight:700;border-bottom:2px solid var(--ink)}
-td small{display:block;color:var(--muted);font-size:13px;font-weight:400}
-.params{font-size:13px;color:var(--muted);margin:0}
-.example{font-size:13px;color:var(--warn);font-weight:600}
-</style>
+[hidden] { display: none !important; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--surface); color: var(--ink); min-height: 100vh; font-size: 15px; line-height: 1.5; }
 
+/* ── HEADER ── */
+.app-header { background: var(--navy); color: var(--white); padding: 0 20px; height: 64px; position: sticky; top: 0; z-index: 100; }
+.app-header-inner { max-width: 840px; margin: 0 auto; height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.header-logo img { height: 42px; width: auto; display: block; }
+.header-center { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.55); letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── LAYOUT ── */
+.main { max-width: 840px; margin: 0 auto; padding: 32px 20px 80px; }
+.section-eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.section-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--ink); }
+.section-intro { color: var(--ink-soft); font-size: 14px; margin-bottom: 24px; max-width: 65ch; }
+
+/* ── CARDS ── */
+.card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+/* ── FORM ── */
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field.span-2 { grid-column: span 2; }
+@media (max-width: 600px) { .field-grid { grid-template-columns: 1fr; } .field.span-2 { grid-column: span 1; } }
+label { font-size: 12px; font-weight: 600; color: var(--ink-soft); letter-spacing: 0.02em; }
+label .req { color: var(--warn); margin-left: 2px; }
+.hint { font-size: 11px; color: var(--na); }
+input[type="text"], input[type="number"] { font-family: var(--sans); font-size: 14px; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 7px; background: var(--white); color: var(--ink); width: 100%; outline: none; -webkit-appearance: none; transition: border-color 0.15s; font-variant-numeric: tabular-nums; }
+input:focus { border-color: var(--accent); }
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+
+/* ── RESULTAT ── */
+.result-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.price-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 4px; }
+.price { font-size: 44px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.score-badge { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 14px; }
+.score-badge.ok-badge   { background: #e8f5f0; color: var(--accent-dk); }
+.score-badge.warn-badge { background: #fef3e8; color: #b45309; }
+.score-badge.ko-badge   { background: #fdecea; color: var(--warn); }
+.notes { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.notes:empty { display: none; }
+.notes li { font-size: 13px; padding: 10px 12px; border-radius: 7px; }
+.notes li.info { background: var(--surface); color: var(--ink-soft); }
+.notes li.warn { background: #fef3e8; color: #b45309; }
+.notes li.stop { background: #fdecea; color: var(--warn); }
+
+.detail { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.detail td { padding: 9px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+.detail td:last-child { text-align: right; white-space: nowrap; font-weight: 600; padding-left: 12px; }
+.detail td small { display: block; font-size: 11px; color: var(--na); }
+.detail tr.total td { font-weight: 700; color: var(--ink); border-bottom: 1.5px solid var(--ink); }
+.detail tr.highlight td:last-child { color: var(--accent-dk); }
+
+/* ── BOUTONS ── */
+.nav-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 12px; flex-wrap: wrap; }
+.btn { padding: 12px 24px; border-radius: 8px; font-family: var(--sans); font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all 0.15s; }
+.btn-primary { background: var(--accent); color: var(--white); }
+.btn-primary:hover { background: var(--accent-dk); }
+.btn-secondary { background: transparent; color: var(--ink-soft); border: 1.5px solid var(--border); }
+.btn-secondary:hover { border-color: var(--ink-soft); color: var(--ink); }
+.btn:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.copy-status { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); }
+
+.params { font-family: var(--mono); font-size: 11px; color: var(--na); line-height: 1.7; margin-top: 8px; }
+.example { font-family: var(--mono); font-size: 11px; color: #b45309; margin-top: 12px; }
+</style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <span class="eyebrow">Holland Bikes · Batteries Twindis</span>
-    <h1>Calculateur de prix de vente</h1>
-    <p>Recopiez les deux prix affichés sur la fiche produit de votre compte Twindis. Le calcul applique la règle commune à tous les magasins.</p>
-  </header>
 
-  <div class="grid">
-    <form class="panel" id="form" autocomplete="off" novalidate>
-      <h2>Fiche Twindis</h2>
-      <div class="field">
-        <label for="nom">Batterie <span class="hint">(facultatif)</span></label>
+<header class="app-header">
+  <div class="app-header-inner">
+    <div class="header-logo"><img src="data:image/jpeg;base64,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" alt="Holland Bikes"></div>
+    <div class="header-center">Calculateur prix Twindis</div>
+  </div>
+</header>
+
+<main class="main">
+  <p class="section-eyebrow">Batteries Twindis · Magasins</p>
+  <h1 class="section-title">Prix de vente</h1>
+  <p class="section-intro">Recopiez les deux prix affichés sur la fiche produit de votre compte Twindis. Le calcul applique la règle commune à tous les magasins.</p>
+
+  <form class="card" id="form" autocomplete="off" novalidate>
+    <h2 class="card-title">Fiche Twindis</h2>
+    <div class="field-grid">
+      <div class="field span-2">
+        <label for="nom">Batterie</label>
         <input type="text" id="nom" placeholder="ex. Shimano BT-E8036 630 Wh">
       </div>
       <div class="field">
-        <label for="achat">Prix d'achat HT (€)</label>
+        <label for="achat">Prix d'achat HT (€) <span class="req">*</span></label>
         <input type="number" id="achat" inputmode="decimal" min="0" step="0.01">
-        <span class="hint">Sur la fiche : « Holland Bikes prijs » (prix promo s'il y en a un).</span>
+        <span class="hint">« Holland Bikes prijs » (prix promo s'il y en a un)</span>
       </div>
       <div class="field">
-        <label for="conseille">Prix conseillé Twindis TTC (€)</label>
+        <label for="conseille">Prix conseillé Twindis TTC (€) <span class="req">*</span></label>
         <input type="number" id="conseille" inputmode="decimal" min="0" step="0.01">
-        <span class="hint">Sur la fiche : « Consumentenadviesprijs ».</span>
+        <span class="hint">« Consumentenadviesprijs »</span>
       </div>
-      <div class="field">
-        <label for="concurrent">Prix concurrent le plus bas TTC (€) <span class="hint">(facultatif)</span></label>
+      <div class="field span-2">
+        <label for="concurrent">Prix concurrent le plus bas TTC (€)</label>
         <input type="number" id="concurrent" inputmode="decimal" min="0" step="0.01">
-        <span class="hint">Si vous connaissez un prix plus bas ailleurs (client, recherche Google Shopping).</span>
+        <span class="hint">Facultatif : si vous connaissez un prix plus bas ailleurs (client, Google Shopping)</span>
       </div>
-      <div class="row">
-        <button type="button" id="reset">Effacer</button>
-      </div>
-      <p class="example" id="example-note">Exemple prérempli : Shimano BT-E8036, relevé sur Twindis le 02/11/2026.</p>
-    </form>
+    </div>
+    <p class="example" id="example-note">Exemple prérempli : Shimano BT-E8036, relevé sur Twindis le 02/11/2026.</p>
+  </form>
 
-    <section class="panel" aria-live="polite">
-      <div class="result-top">
-        <span class="price-label">Prix de vente TTC</span>
+  <section class="card" aria-live="polite">
+    <h2 class="card-title">Résultat</h2>
+    <div class="result-head">
+      <div>
+        <p class="price-label">Prix de vente TTC</p>
         <div class="price" id="price">–</div>
-        <span class="pill" id="pill" hidden></span>
       </div>
-      <ul class="notes" id="notes"></ul>
-      <table aria-label="Détail du calcul">
-        <tbody>
-          <tr><td>Prix d'achat Twindis HT</td><td id="r-achat">–</td></tr>
-          <tr><td>Commission EBSC HT<small id="r-com-detail">10 % de l'achat, minimum 10 €</small></td><td id="r-com">–</td></tr>
-          <tr class="total"><td>Coût magasin HT</td><td id="r-cout">–</td></tr>
-          <tr><td>Prix conseillé Twindis TTC</td><td id="r-conseille">–</td></tr>
-          <tr><td>Prix cible TTC<small>Prix conseillé – 10 %, arrondi à un prix en 9</small></td><td id="r-cible">–</td></tr>
-          <tr><td>Prix plancher TTC<small>1,5 × coût magasin HT (20 % de marge minimum)</small></td><td id="r-plancher">–</td></tr>
-          <tr><td>Prix de vente HT</td><td id="r-pvht">–</td></tr>
-          <tr class="total"><td>Marge brute HT</td><td id="r-marge">–</td></tr>
-        </tbody>
-      </table>
-      <div class="row">
-        <button type="button" class="primary" id="copy">Copier le résultat</button>
-        <span class="hint" id="copy-status" role="status"></span>
-      </div>
-      <p class="params">Règle validée pour le lancement : remise 10 % sous le prix conseillé Twindis · commission EBSC 10 % (min. 10 € HT) · prix plancher 1,5 × coût HT · TVA 20 %.</p>
-    </section>
+      <span class="score-badge" id="pill" hidden></span>
+    </div>
+    <ul class="notes" id="notes"></ul>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">Détail du calcul</h2>
+    <table class="detail">
+      <tbody>
+        <tr><td>Prix d'achat Twindis HT</td><td id="r-achat">–</td></tr>
+        <tr><td>Commission EBSC HT<small id="r-com-detail">10 % de l'achat, minimum 10 €</small></td><td id="r-com">–</td></tr>
+        <tr class="total"><td>Coût magasin HT</td><td id="r-cout">–</td></tr>
+        <tr><td>Prix conseillé Twindis TTC</td><td id="r-conseille">–</td></tr>
+        <tr><td>Prix cible TTC<small>Prix conseillé – 10 %, arrondi à un prix en 9</small></td><td id="r-cible">–</td></tr>
+        <tr><td>Prix plancher TTC<small>1,5 × coût magasin HT (20 % de marge minimum)</small></td><td id="r-plancher">–</td></tr>
+        <tr><td>Prix de vente HT</td><td id="r-pvht">–</td></tr>
+        <tr class="total highlight"><td>Marge brute HT</td><td id="r-marge">–</td></tr>
+      </tbody>
+    </table>
+    <p class="params">Règle de lancement : remise 10 % sous le prix conseillé Twindis · commission EBSC 10 % (min. 10 € HT) · prix plancher 1,5 × coût HT · TVA 20 %</p>
+  </section>
+
+  <div class="nav-bar">
+    <button type="button" class="btn btn-secondary" id="reset">Effacer</button>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span class="copy-status" id="copy-status" role="status"></span>
+      <button type="button" class="btn btn-primary" id="copy">Copier le résultat</button>
+    </div>
   </div>
-</div>
+</main>
 
 <script>
 const P = { remise:0.10, com:0.10, comMin:10, coef:1.5, tva:0.20 };
@@ -172,7 +213,7 @@ function render(){
   let decision;
   if (r.prix === null){
     set('price','Ne pas vendre');
-    pill.className = 'pill stop'; pill.textContent = 'STOP : Twindis trop cher';
+    pill.className = 'score-badge ko-badge'; pill.textContent = '● STOP : Twindis trop cher';
     notes.push(['stop', `Le prix plancher (${eur(r.plancher)}) dépasse le prix conseillé Twindis (${eur(conseille)}). Ne commandez pas chez Twindis : passez par un autre fournisseur ou proposez une autre batterie.`]);
     set('r-pvht','–'); set('r-marge','–');
     decision = 'STOP : ne pas commander chez Twindis';
@@ -180,8 +221,8 @@ function render(){
     const ht = r.prix / (1 + P.tva), marge = ht - r.cout;
     set('price', eur(r.prix, Number.isInteger(r.prix) ? 0 : 2));
     set('r-pvht', eur(ht)); set('r-marge', `${eur(marge)} (${Math.round(marge / ht * 100)} %)`);
-    if (r.statut === 'ok'){ pill.className='pill ok'; pill.textContent='OK : prix conseillé – 10 %'; decision='OK'; }
-    else { pill.className='pill warn'; pill.textContent='OK : prix plancher appliqué'; decision='OK, prix plancher';
+    if (r.statut === 'ok'){ pill.className='score-badge ok-badge'; pill.textContent='● OK : prix conseillé – 10 %'; decision='OK'; }
+    else { pill.className='score-badge warn-badge'; pill.textContent='● OK : prix plancher appliqué'; decision='OK, prix plancher';
       notes.push(['info', `Le prix conseillé – 10 % (${eur(r.cible,0)}) laissait moins de 20 % de marge : le prix est remonté au plancher, sans dépasser le prix conseillé.`]); }
     if (conc !== null && r.prix > conc) notes.push(['warn', `Un concurrent est moins cher (${eur(conc)}). Vérifiez son offre (même modèle, en stock) avant de proposer ce prix.`]);
   }
@@ -204,13 +245,11 @@ $('reset').addEventListener('click', () => { ['nom','achat','conseille','concurr
 $('copy').addEventListener('click', () => {
   if (!lastText){ $('copy-status').textContent = 'Rien à copier.'; return; }
   navigator.clipboard.writeText(lastText).then(() => { $('copy-status').textContent = 'Copié.'; })
-    .catch(() => { $('copy-status').textContent = 'Copie impossible ici : sélectionnez le détail à la main.'; });
+    .catch(() => { $('copy-status').textContent = 'Copie impossible : sélectionnez le détail à la main.'; });
 });
 
-// Exemple réel prérempli
 $('nom').value = 'Shimano BT-E8036 630 Wh'; $('achat').value = 190; $('conseille').value = 749;
 render();
 </script>
-
 </body>
 </html>
