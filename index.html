@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>Calculateur prix Twindis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: one column on phone, form left / result right on desktop. Shop-counter tool: big price, clear verdict, detail below. */
+:root{
+  --bg:#F3F4F6; --surface:#FFFFFF; --ink:#16233F; --muted:#5A6478; --line:#D9DDE5;
+  --accent:#E2621B; --accent-ink:#FFFFFF; --field:#FFFFFF;
+  --ok:#1F7A4D; --ok-bg:#E3F3EA; --warn:#9A5B00; --warn-bg:#FDF0D8; --stop:#B42318; --stop-bg:#FDE7E5;
+  --display:'Archivo', 'Arial Narrow', Arial, sans-serif;
+  --body:'Source Sans 3', 'Segoe UI', Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1524; --surface:#18213A; --ink:#E9EDF5; --muted:#A3ADC2; --line:#2C3756;
+  --accent:#F07A38; --accent-ink:#14110E; --field:#111A2E;
+  --ok:#5CCB91; --ok-bg:#163527; --warn:#F2B661; --warn-bg:#3A2A10; --stop:#FF8A7E; --stop-bg:#3D1A18; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1524; --surface:#18213A; --ink:#E9EDF5; --muted:#A3ADC2; --line:#2C3756;
+  --accent:#F07A38; --accent-ink:#14110E; --field:#111A2E;
+  --ok:#5CCB91; --ok-bg:#163527; --warn:#F2B661; --warn-bg:#3A2A10; --stop:#FF8A7E; --stop-bg:#3D1A18; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 40px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:4px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,4vw,36px);line-height:1.1;margin:0;text-wrap:balance}
+header p{margin:0;color:var(--muted);max-width:65ch}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;align-items:start}
+@media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+h2{font-family:var(--display);font-size:16px;font-weight:700;margin:0;letter-spacing:.02em}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-weight:600}
+.hint{font-size:13px;color:var(--muted)}
+input[type=number],input[type=text]{font:inherit;font-size:18px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--ink);width:100%;font-variant-numeric:tabular-nums}
+input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{padding:10px 8px;text-align:center;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted);background:var(--field)}
+.seg label+input+label,.seg input+label~label{border-left:1px solid var(--line)}
+.seg input:checked+label{background:var(--ink);color:var(--bg)}
+.seg input:focus-visible+label{outline:3px solid var(--accent);outline-offset:-3px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+button{font:inherit;font-weight:600;border-radius:8px;padding:10px 14px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.result-top{display:flex;flex-direction:column;gap:10px}
+.price-label{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.price{font-family:var(--display);font-weight:800;font-size:clamp(48px,9vw,72px);line-height:1;font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;gap:8px;font-weight:700;padding:6px 12px;border-radius:999px;width:fit-content}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.stop{background:var(--stop-bg);color:var(--stop)}
+.notes{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.notes li{padding:10px 12px;border-radius:8px;font-size:15px}
+.notes li.warn{background:var(--warn-bg);color:var(--warn)} .notes li.stop{background:var(--stop-bg);color:var(--stop)} .notes li.info{background:var(--bg);color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+td{padding:8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:last-child{text-align:right;white-space:nowrap;font-weight:600;padding-left:12px}
+tr.total td{font-weight:700;border-bottom:2px solid var(--ink)}
+td small{display:block;color:var(--muted);font-size:13px;font-weight:400}
+.params{font-size:13px;color:var(--muted);margin:0}
+.example{font-size:13px;color:var(--warn);font-weight:600}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Holland Bikes · Batteries Twindis</span>
+    <h1>Calculateur de prix de vente</h1>
+    <p>Recopiez les deux prix affichés sur la fiche produit de votre compte Twindis. Le calcul applique la règle commune à tous les magasins.</p>
+  </header>
+
+  <div class="grid">
+    <form class="panel" id="form" autocomplete="off" novalidate>
+      <h2>Fiche Twindis</h2>
+      <div class="field">
+        <label for="nom">Batterie <span class="hint">(facultatif)</span></label>
+        <input type="text" id="nom" placeholder="ex. Shimano BT-E8036 630 Wh">
+      </div>
+      <div class="field">
+        <label for="achat">Prix d'achat HT (€)</label>
+        <input type="number" id="achat" inputmode="decimal" min="0" step="0.01">
+        <span class="hint">Sur la fiche : « Holland Bikes prijs » (prix promo s'il y en a un).</span>
+      </div>
+      <div class="field">
+        <label for="conseille">Prix conseillé Twindis TTC (€)</label>
+        <input type="number" id="conseille" inputmode="decimal" min="0" step="0.01">
+        <span class="hint">Sur la fiche : « Consumentenadviesprijs ».</span>
+      </div>
+      <div class="field">
+        <label for="concurrent">Prix concurrent le plus bas TTC (€) <span class="hint">(facultatif)</span></label>
+        <input type="number" id="concurrent" inputmode="decimal" min="0" step="0.01">
+        <span class="hint">Si vous connaissez un prix plus bas ailleurs (client, recherche Google Shopping).</span>
+      </div>
+      <div class="row">
+        <button type="button" id="reset">Effacer</button>
+      </div>
+      <p class="example" id="example-note">Exemple prérempli : Shimano BT-E8036, relevé sur Twindis le 02/11/2026.</p>
+    </form>
+
+    <section class="panel" aria-live="polite">
+      <div class="result-top">
+        <span class="price-label">Prix de vente TTC</span>
+        <div class="price" id="price">–</div>
+        <span class="pill" id="pill" hidden></span>
+      </div>
+      <ul class="notes" id="notes"></ul>
+      <table aria-label="Détail du calcul">
+        <tbody>
+          <tr><td>Prix d'achat Twindis HT</td><td id="r-achat">–</td></tr>
+          <tr><td>Commission EBSC HT<small id="r-com-detail">10 % de l'achat, minimum 10 €</small></td><td id="r-com">–</td></tr>
+          <tr class="total"><td>Coût magasin HT</td><td id="r-cout">–</td></tr>
+          <tr><td>Prix conseillé Twindis TTC</td><td id="r-conseille">–</td></tr>
+          <tr><td>Prix cible TTC<small>Prix conseillé – 10 %, arrondi à un prix en 9</small></td><td id="r-cible">–</td></tr>
+          <tr><td>Prix plancher TTC<small>1,5 × coût magasin HT (20 % de marge minimum)</small></td><td id="r-plancher">–</td></tr>
+          <tr><td>Prix de vente HT</td><td id="r-pvht">–</td></tr>
+          <tr class="total"><td>Marge brute HT</td><td id="r-marge">–</td></tr>
+        </tbody>
+      </table>
+      <div class="row">
+        <button type="button" class="primary" id="copy">Copier le résultat</button>
+        <span class="hint" id="copy-status" role="status"></span>
+      </div>
+      <p class="params">Règle validée pour le lancement : remise 10 % sous le prix conseillé Twindis · commission EBSC 10 % (min. 10 € HT) · prix plancher 1,5 × coût HT · TVA 20 %.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+const P = { remise:0.10, com:0.10, comMin:10, coef:1.5, tva:0.20 };
+const $ = id => document.getElementById(id);
+const eur = (v, d=2) => v.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}) + ' €';
+const num = id => { const v = parseFloat(String($(id).value).replace(',','.')); return isFinite(v) && v > 0 ? v : null; };
+const down9 = x => Math.floor((x + 1) / 10) * 10 - 1;
+const up9 = x => Math.ceil((x + 1) / 10) * 10 - 1;
+
+function compute(achat, conseille){
+  const com = Math.max(achat * P.com, P.comMin);
+  const cout = achat + com;
+  const plancher = cout * P.coef;
+  const cible = down9(conseille * (1 - P.remise));
+  if (plancher > conseille) return {com, cout, plancher, cible, prix:null, statut:'stop'};
+  let prix = cible >= plancher ? cible : up9(plancher);
+  prix = Math.min(prix, conseille);
+  return {com, cout, plancher, cible, prix, statut: cible >= plancher ? 'ok' : 'plancher'};
+}
+
+let lastText = '';
+function render(){
+  const achat = num('achat'), conseille = num('conseille'), conc = num('concurrent');
+  const notes = [];
+  const set = (id, t) => { $(id).textContent = t; };
+  const pill = $('pill');
+  if (achat === null || conseille === null){
+    set('price','–'); pill.hidden = true;
+    ['r-achat','r-com','r-cout','r-conseille','r-cible','r-plancher','r-pvht','r-marge'].forEach(i=>set(i,'–'));
+    $('notes').innerHTML = '<li class="info">Saisissez le prix d\'achat HT et le prix conseillé Twindis pour obtenir le prix de vente.</li>';
+    lastText = ''; return;
+  }
+  const r = compute(achat, conseille);
+  set('r-achat', eur(achat)); set('r-com', eur(r.com));
+  set('r-com-detail', r.com > achat * P.com + 1e-9 ? 'Minimum de 10 € appliqué' : '10 % de l\'achat, minimum 10 €');
+  set('r-cout', eur(r.cout)); set('r-conseille', eur(conseille));
+  set('r-cible', eur(r.cible,0)); set('r-plancher', eur(r.plancher));
+  let decision;
+  if (r.prix === null){
+    set('price','Ne pas vendre');
+    pill.className = 'pill stop'; pill.textContent = 'STOP : Twindis trop cher';
+    notes.push(['stop', `Le prix plancher (${eur(r.plancher)}) dépasse le prix conseillé Twindis (${eur(conseille)}). Ne commandez pas chez Twindis : passez par un autre fournisseur ou proposez une autre batterie.`]);
+    set('r-pvht','–'); set('r-marge','–');
+    decision = 'STOP : ne pas commander chez Twindis';
+  } else {
+    const ht = r.prix / (1 + P.tva), marge = ht - r.cout;
+    set('price', eur(r.prix, Number.isInteger(r.prix) ? 0 : 2));
+    set('r-pvht', eur(ht)); set('r-marge', `${eur(marge)} (${Math.round(marge / ht * 100)} %)`);
+    if (r.statut === 'ok'){ pill.className='pill ok'; pill.textContent='OK : prix conseillé – 10 %'; decision='OK'; }
+    else { pill.className='pill warn'; pill.textContent='OK : prix plancher appliqué'; decision='OK, prix plancher';
+      notes.push(['info', `Le prix conseillé – 10 % (${eur(r.cible,0)}) laissait moins de 20 % de marge : le prix est remonté au plancher, sans dépasser le prix conseillé.`]); }
+    if (conc !== null && r.prix > conc) notes.push(['warn', `Un concurrent est moins cher (${eur(conc)}). Vérifiez son offre (même modèle, en stock) avant de proposer ce prix.`]);
+  }
+  pill.hidden = false;
+  $('notes').innerHTML = '';
+  notes.forEach(([cls, t]) => { const li = document.createElement('li'); li.className = cls; li.textContent = t; $('notes').appendChild(li); });
+  const nom = $('nom').value.trim();
+  lastText = [
+    nom ? `Batterie : ${nom}` : null,
+    `Achat HT : ${eur(achat)} + commission EBSC ${eur(r.com)} = coût ${eur(r.cout)}`,
+    `Prix conseillé Twindis : ${eur(conseille)} · plancher ${eur(r.plancher)}`,
+    r.prix === null ? 'Décision : STOP, ne pas commander chez Twindis' : `Prix de vente TTC : ${eur(r.prix, Number.isInteger(r.prix)?0:2)} (${decision})`,
+    ...notes.filter(n=>n[0]==='warn').map(n=>'À faire : ' + n[1])
+  ].filter(Boolean).join('\n');
+}
+
+['nom','achat','conseille','concurrent'].forEach(id => $(id).addEventListener('input', () => { $('example-note').hidden = true; render(); }));
+$('form').addEventListener('submit', e => e.preventDefault());
+$('reset').addEventListener('click', () => { ['nom','achat','conseille','concurrent'].forEach(id => $(id).value=''); $('example-note').hidden = true; render(); $('achat').focus(); });
+$('copy').addEventListener('click', () => {
+  if (!lastText){ $('copy-status').textContent = 'Rien à copier.'; return; }
+  navigator.clipboard.writeText(lastText).then(() => { $('copy-status').textContent = 'Copié.'; })
+    .catch(() => { $('copy-status').textContent = 'Copie impossible ici : sélectionnez le détail à la main.'; });
+});
+
+// Exemple réel prérempli
+$('nom').value = 'Shimano BT-E8036 630 Wh'; $('achat').value = 190; $('conseille').value = 749;
+render();
+</script>
+
+</body>
+</html>
