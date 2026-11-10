@@ -208,7 +208,7 @@ const margeOf = (ttc, cout) => { const ht = ttc / (1 + P.tva); return (ht - cout
 function compute(achat, autre, conseille){
   const com = Math.min(Math.max(achat * P.com, P.comMin), P.comMax);
   const cout = achat + com;
-  const base = autre !== null && autre < cout ? autre : cout;
+  const base = cout;
   const floor = up9(ttcFor(base, P.margeMin));
   const top40 = down9(ttcFor(base, P.margeMax));
   const plafonne = conseille !== null && top40 > conseille;
@@ -250,13 +250,13 @@ function render(){
     $('range-basis').hidden = true; decision = 'Twindis';
   } else if (r.autreMoinsCher){
     pill.className = 'score-badge warn-badge'; pill.textContent = '● Autre fournisseur moins cher';
-    notes.push(['warn', `L'autre fournisseur revient ${eur(r.cout - autre)} HT moins cher que Twindis commission comprise. Commandez plutôt chez lui.`]);
-    $('range-basis').textContent = 'Fourchette calculée sur le prix de l\'autre fournisseur.'; $('range-basis').hidden = false;
+    notes.push(['warn', `L'autre fournisseur revient ${eur(r.cout - autre)} HT moins cher que Twindis commission comprise. Commandez plutôt chez lui (la fourchette ci-dessus reste calculée sur le coût Twindis).`]);
+    $('range-basis').hidden = true;
     decision = 'autre fournisseur';
   } else {
     pill.className = 'score-badge ok-badge'; pill.textContent = '● Twindis moins cher';
     notes.push(['info', r.cout === autre ? 'Même coût chez Twindis et chez l\'autre fournisseur.' : `Twindis revient ${eur(autre - r.cout)} HT moins cher que l'autre fournisseur, commission comprise.`]);
-    $('range-basis').textContent = 'Fourchette calculée sur le coût Twindis.'; $('range-basis').hidden = false;
+    $('range-basis').hidden = true;
     decision = 'Twindis';
   }
   if (r.horsPrix){
