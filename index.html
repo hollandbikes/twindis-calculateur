@@ -196,7 +196,7 @@ input[type="number"] { -moz-appearance: textfield; }
         <tr class="highlight"><td>Prix haut TTC<small id="r-top-detail">40 % de marge sur le prix HT, arrondi en dessous (X,90 € sous 100 €, prix en 9 au-delà), sans dépasser le prix conseillé</small></td><td id="r-top">–</td></tr>
       </tbody>
     </table>
-    <p class="params">Règle : commission EBSC 10 % du prix d'achat Twindis (min. 10 €, max. 40 € HT ; chargeurs : 10 % sans minimum ; livraison et écotaxe incluses) · fourchette de vente entre 20 % et 40 % de marge sur le prix HT, arrondie à X,90 € sous 100 € et au prix en 9 au-delà, plafonnée au prix conseillé Twindis · TVA 20 %</p>
+    <p class="params">Règle : commission EBSC 10 % du prix d'achat Twindis (max. 40 € HT ; minimum 10 € pour les batteries uniquement ; livraison et écotaxe incluses) · fourchette de vente entre 20 % et 40 % de marge sur le prix HT, arrondie à X,90 € sous 100 € et au prix en 9 au-delà, plafonnée au prix conseillé Twindis · TVA 20 %</p>
   </section>
 
   <div class="nav-bar">
@@ -225,7 +225,7 @@ const ttcFor = (cout, marge) => cout / (1 - marge) * (1 + P.tva);
 const margeOf = (ttc, cout) => { const ht = ttc / (1 + P.tva); return (ht - cout) / ht; };
 
 const typeOf = () => document.querySelector('input[name="type"]:checked').value;
-const comMinFor = t => t === 'chargeur' ? 0 : P.comMin;
+const comMinFor = t => t === 'batterie' ? P.comMin : 0;
 function compute(achat, autre, conseille, type){
   const com = Math.min(Math.max(achat * P.com, comMinFor(type)), P.comMax);
   const cout = achat + com;
@@ -252,7 +252,7 @@ function render(){
   const type = typeOf();
   const r = compute(achat, autre, conseille, type);
   const raw = achat * P.com;
-  set('r-com-detail', (raw < comMinFor(type) ? 'Minimum de 10 € appliqué' : raw > P.comMax ? 'Maximum de 40 € appliqué' : type === 'chargeur' ? '10 % de l\'achat, sans minimum (chargeur)' : '10 % de l\'achat') + ' · livraison et écotaxe incluses');
+  set('r-com-detail', (raw < comMinFor(type) ? 'Minimum de 10 € appliqué' : raw > P.comMax ? 'Maximum de 40 € appliqué' : type !== 'batterie' ? '10 % de l\'achat, sans minimum' : '10 % de l\'achat') + ' · livraison et écotaxe incluses');
   set('price', eur(r.cout));
   set('r-achat', eur(achat)); set('r-com', eur(r.com)); set('r-cout', eur(r.cout));
   set('r-autre', autre !== null ? eur(autre) : '–');
@@ -300,7 +300,7 @@ function render(){
 
 FIELDS.forEach(id => $(id).addEventListener('input', () => { $('example-note').hidden = true; render(); }));
 document.querySelectorAll('input[name="type"]').forEach(el => el.addEventListener('change', () => {
-  $('type-hint').textContent = typeOf() === 'chargeur' ? 'Commission EBSC : 10 % sans minimum, maximum 40 €' : 'Commission EBSC : 10 %, minimum 10 €, maximum 40 €';
+  $('type-hint').textContent = typeOf() === 'batterie' ? 'Commission EBSC : 10 %, minimum 10 €, maximum 40 €' : 'Commission EBSC : 10 % sans minimum, maximum 40 €';
   $('example-note').hidden = true; render();
 }));
 $('form').addEventListener('submit', e => e.preventDefault());
