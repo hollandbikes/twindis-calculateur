@@ -94,6 +94,15 @@ input[type="number"] { -moz-appearance: textfield; }
 
 .params { font-family: var(--mono); font-size: 11px; color: var(--na); line-height: 1.7; margin-top: 8px; }
 .example { font-family: var(--mono); font-size: 11px; color: #b45309; margin-top: 12px; }
+.included { font-size: 12px; color: var(--ink-soft); background: var(--surface); border-radius: 7px; padding: 9px 12px; margin-top: 14px; }
+.range { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+.range-box { border: 1.5px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.range-box.floor { border-color: var(--warn); background: #fdecea; }
+.range-box.floor .price-label, .range-box.floor small { color: var(--warn); }
+.range-price { font-size: 28px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.range-box small { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+.range-basis { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 10px; }
+@media (max-width: 420px) { .range { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -106,39 +115,25 @@ input[type="number"] { -moz-appearance: textfield; }
 </header>
 
 <main class="main">
-  <p class="section-eyebrow">Batteries Twindis · Magasins</p>
-  <h1 class="section-title">Prix de vente</h1>
-  <p class="section-intro">Recopiez les deux prix affichés sur la fiche produit de votre compte Twindis. Le calcul applique la règle commune à tous les magasins.</p>
+  <p class="section-eyebrow">Twindis · Magasins</p>
+  <h1 class="section-title">Coût d'achat via Twindis</h1>
+  <p class="section-intro">Recopiez le prix d'achat affiché sur la fiche produit de votre compte Twindis. L'outil calcule votre coût de revient réel (commission EBSC incluse), le compare à un autre fournisseur si besoin, et donne la fourchette de prix de vente.</p>
 
   <form class="card" id="form" autocomplete="off" novalidate>
-    <h2 class="card-title">Fiche Twindis</h2>
+    <h2 class="card-title">Prix d'achat</h2>
     <div class="field-grid">
       <div class="field">
-        <label for="achat">Prix d'achat HT (€) <span class="req">*</span></label>
+        <label for="achat">Prix d'achat Twindis HT (€) <span class="req">*</span></label>
         <input type="number" id="achat" inputmode="decimal" min="0" step="0.01">
         <span class="hint">« Holland Bikes prijs » (prix promo s'il y en a un)</span>
       </div>
       <div class="field">
-        <label for="conseille">Prix conseillé Twindis TTC (€) <span class="req">*</span></label>
-        <input type="number" id="conseille" inputmode="decimal" min="0" step="0.01">
-        <span class="hint">« Consumentenadviesprijs »</span>
-      </div>
-      <div class="field">
-        <label for="livraison">Frais de livraison HT (€)</label>
-        <input type="number" id="livraison" inputmode="decimal" min="0" step="0.01" placeholder="0">
-        <span class="hint">Frais de port de la commande Twindis (à répartir si plusieurs articles)</span>
-      </div>
-      <div class="field">
-        <label for="ecotaxe">Écotaxe HT (€)</label>
-        <input type="number" id="ecotaxe" inputmode="decimal" min="0" step="0.01" placeholder="0">
-        <span class="hint">Frais de mise sur le marché indiqués sur la facture Twindis</span>
-      </div>
-      <div class="field span-2">
-        <label for="concurrent">Prix concurrent le plus bas TTC (€)</label>
-        <input type="number" id="concurrent" inputmode="decimal" min="0" step="0.01">
-        <span class="hint">Facultatif : si vous connaissez un prix plus bas ailleurs (client, Google Shopping)</span>
+        <label for="autre">Prix d'achat chez un autre fournisseur HT (€)</label>
+        <input type="number" id="autre" inputmode="decimal" min="0" step="0.01">
+        <span class="hint">Facultatif : pour comparer, frais de port compris s'il y en a</span>
       </div>
     </div>
+    <p class="included">Frais de livraison et écotaxe Twindis : inclus dans la commission EBSC, rien à ajouter.</p>
     <p class="example" id="example-note">Exemple prérempli : Shimano BT-E8036, relevé sur Twindis le 02/11/2026.</p>
   </form>
 
@@ -146,11 +141,24 @@ input[type="number"] { -moz-appearance: textfield; }
     <h2 class="card-title">Résultat</h2>
     <div class="result-head">
       <div>
-        <p class="price-label">Prix de vente TTC</p>
+        <p class="price-label">Coût de revient Twindis HT</p>
         <div class="price" id="price">–</div>
       </div>
       <span class="score-badge" id="pill" hidden></span>
     </div>
+    <div class="range" id="range" hidden>
+      <div class="range-box floor">
+        <p class="price-label">Prix plancher TTC</p>
+        <div class="range-price" id="floor">–</div>
+        <small id="floor-m">Ne jamais vendre en dessous</small>
+      </div>
+      <div class="range-box">
+        <p class="price-label">Prix haut TTC</p>
+        <div class="range-price" id="top">–</div>
+        <small id="top-m">–</small>
+      </div>
+    </div>
+    <p class="range-basis" id="range-basis" hidden></p>
     <ul class="notes" id="notes"></ul>
   </section>
 
@@ -159,18 +167,15 @@ input[type="number"] { -moz-appearance: textfield; }
     <table class="detail">
       <tbody>
         <tr><td>Prix d'achat Twindis HT</td><td id="r-achat">–</td></tr>
-        <tr><td>Commission EBSC HT<small id="r-com-detail">10 % de l'achat, minimum 10 €</small></td><td id="r-com">–</td></tr>
-        <tr><td>Frais de livraison HT</td><td id="r-liv">–</td></tr>
-        <tr><td>Écotaxe HT</td><td id="r-eco">–</td></tr>
-        <tr class="total"><td>Coût magasin HT<small>Achat + commission + livraison + écotaxe</small></td><td id="r-cout">–</td></tr>
-        <tr><td>Prix conseillé Twindis TTC</td><td id="r-conseille">–</td></tr>
-        <tr><td>Prix cible TTC<small>Prix conseillé – 10 %, arrondi à un prix en 9</small></td><td id="r-cible">–</td></tr>
-        <tr><td>Prix plancher TTC<small>1,5 × coût magasin HT (20 % de marge minimum)</small></td><td id="r-plancher">–</td></tr>
-        <tr><td>Prix de vente HT</td><td id="r-pvht">–</td></tr>
-        <tr class="total highlight"><td>Marge brute HT</td><td id="r-marge">–</td></tr>
+        <tr><td>Commission EBSC HT<small id="r-com-detail">10 % de l'achat, entre 10 € et 40 € · livraison et écotaxe incluses</small></td><td id="r-com">–</td></tr>
+        <tr class="total"><td>Coût de revient Twindis HT</td><td id="r-cout">–</td></tr>
+        <tr><td>Prix d'achat autre fournisseur HT</td><td id="r-autre">–</td></tr>
+        <tr><td>Écart Twindis / autre fournisseur HT<small>Positif : Twindis plus cher</small></td><td id="r-ecart">–</td></tr>
+        <tr><td>Prix plancher TTC<small>20 % de marge sur le prix HT, arrondi au prix en 9 supérieur</small></td><td id="r-floor">–</td></tr>
+        <tr class="highlight"><td>Prix haut TTC<small>40 % de marge sur le prix HT, arrondi au prix en 9 inférieur</small></td><td id="r-top">–</td></tr>
       </tbody>
     </table>
-    <p class="params">Règle validée : remise 10 % sous le prix conseillé Twindis · commission EBSC 10 % du prix d'achat (min. 10 € HT) · prix plancher 1,5 × coût magasin HT · TVA 20 %</p>
+    <p class="params">Règle : commission EBSC 10 % du prix d'achat Twindis (min. 10 €, max. 40 € HT, livraison et écotaxe incluses) · fourchette de vente entre 20 % et 40 % de marge sur le prix HT · TVA 20 %</p>
   </section>
 
   <div class="nav-bar">
@@ -183,80 +188,88 @@ input[type="number"] { -moz-appearance: textfield; }
 </main>
 
 <script>
-const P = { remise:0.10, com:0.10, comMin:10, coef:1.5, tva:0.20 };
+const P = { com:0.10, comMin:10, comMax:40, margeMin:0.20, margeMax:0.40, tva:0.20 };
+const FIELDS = ['achat','autre'];
 const $ = id => document.getElementById(id);
 const eur = (v, d=2) => v.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}) + ' €';
-const opt = id => { const v = parseFloat(String($(id).value).replace(',','.')); return isFinite(v) && v > 0 ? v : 0; };
+const eurR = v => eur(v, Number.isInteger(v) ? 0 : 2);
 const num = id => { const v = parseFloat(String($(id).value).replace(',','.')); return isFinite(v) && v > 0 ? v : null; };
 const down9 = x => Math.floor((x + 1) / 10) * 10 - 1;
 const up9 = x => Math.ceil((x + 1) / 10) * 10 - 1;
+const ttcFor = (cout, marge) => cout / (1 - marge) * (1 + P.tva);
+const margeOf = (ttc, cout) => { const ht = ttc / (1 + P.tva); return (ht - cout) / ht; };
 
-function compute(achat, conseille, liv, eco){
-  const com = Math.max(achat * P.com, P.comMin);
-  const cout = achat + com + liv + eco;
-  const plancher = cout * P.coef;
-  const cible = down9(conseille * (1 - P.remise));
-  if (plancher > conseille) return {com, cout, plancher, cible, prix:null, statut:'stop'};
-  let prix = cible >= plancher ? cible : up9(plancher);
-  prix = Math.min(prix, conseille);
-  return {com, cout, plancher, cible, prix, statut: cible >= plancher ? 'ok' : 'plancher'};
+function compute(achat, autre){
+  const com = Math.min(Math.max(achat * P.com, P.comMin), P.comMax);
+  const cout = achat + com;
+  const base = autre !== null && autre < cout ? autre : cout;
+  const floor = up9(ttcFor(base, P.margeMin));
+  const top = Math.max(down9(ttcFor(base, P.margeMax)), floor);
+  return { com, cout, base, floor, top, autreMoinsCher: autre !== null && autre < cout };
 }
 
 let lastText = '';
 function render(){
-  const achat = num('achat'), conseille = num('conseille'), conc = num('concurrent'), liv = opt('livraison'), eco = opt('ecotaxe');
-  const notes = [];
+  const achat = num('achat'), autre = num('autre');
   const set = (id, t) => { $(id).textContent = t; };
-  const pill = $('pill');
-  if (achat === null || conseille === null){
-    set('price','–'); pill.hidden = true;
-    ['r-achat','r-com','r-liv','r-eco','r-cout','r-conseille','r-cible','r-plancher','r-pvht','r-marge'].forEach(i=>set(i,'–'));
-    $('notes').innerHTML = '<li class="info">Saisissez le prix d\'achat HT et le prix conseillé Twindis pour obtenir le prix de vente.</li>';
+  const pill = $('pill'), notes = [];
+  if (achat === null){
+    set('price','–'); pill.hidden = true; $('range').hidden = true; $('range-basis').hidden = true;
+    ['r-achat','r-com','r-cout','r-autre','r-ecart','r-floor','r-top'].forEach(i => set(i,'–'));
+    set('r-com-detail', '10 % de l\'achat, entre 10 € et 40 € · livraison et écotaxe incluses');
+    $('notes').innerHTML = '<li class="info">Saisissez le prix d\'achat Twindis HT pour obtenir le coût de revient et la fourchette de prix.</li>';
     lastText = ''; return;
   }
-  const r = compute(achat, conseille, liv, eco);
-  set('r-achat', eur(achat)); set('r-com', eur(r.com)); set('r-liv', eur(liv)); set('r-eco', eur(eco));
-  set('r-com-detail', r.com > achat * P.com + 1e-9 ? 'Minimum de 10 € appliqué' : '10 % de l\'achat, minimum 10 €');
-  set('r-cout', eur(r.cout)); set('r-conseille', eur(conseille));
-  set('r-cible', eur(r.cible,0)); set('r-plancher', eur(r.plancher));
+  const r = compute(achat, autre);
+  const raw = achat * P.com;
+  set('r-com-detail', (raw < P.comMin ? 'Minimum de 10 € appliqué' : raw > P.comMax ? 'Maximum de 40 € appliqué' : '10 % de l\'achat, entre 10 € et 40 €') + ' · livraison et écotaxe incluses');
+  set('price', eur(r.cout));
+  set('r-achat', eur(achat)); set('r-com', eur(r.com)); set('r-cout', eur(r.cout));
+  set('r-autre', autre !== null ? eur(autre) : '–');
+  set('r-ecart', autre !== null ? (r.cout - autre >= 0 ? '+' : '') + eur(r.cout - autre) : '–');
+  set('r-floor', eurR(r.floor)); set('r-top', eurR(r.top));
+  set('floor', eurR(r.floor)); set('top', eurR(r.top));
+  set('floor-m', `Ne jamais vendre en dessous · marge ${Math.round(margeOf(r.floor, r.base) * 100)} %`);
+  set('top-m', `Marge ${Math.round(margeOf(r.top, r.base) * 100)} %`);
+  $('range').hidden = false;
+
   let decision;
-  if (r.prix === null){
-    set('price','Ne pas vendre');
-    pill.className = 'score-badge ko-badge'; pill.textContent = '● STOP : Twindis trop cher';
-    notes.push(['stop', `Le prix plancher (${eur(r.plancher)}) dépasse le prix conseillé Twindis (${eur(conseille)}). Ne commandez pas chez Twindis : passez par un autre fournisseur ou proposez une autre batterie.`]);
-    set('r-pvht','–'); set('r-marge','–');
-    decision = 'STOP : ne pas commander chez Twindis';
+  if (autre === null){
+    pill.className = 'score-badge ok-badge'; pill.textContent = '● Coût Twindis calculé';
+    $('range-basis').hidden = true; decision = 'Twindis';
+  } else if (r.autreMoinsCher){
+    pill.className = 'score-badge warn-badge'; pill.textContent = '● Autre fournisseur moins cher';
+    notes.push(['warn', `L'autre fournisseur revient ${eur(r.cout - autre)} HT moins cher que Twindis commission comprise. Commandez plutôt chez lui.`]);
+    $('range-basis').textContent = 'Fourchette calculée sur le prix de l\'autre fournisseur.'; $('range-basis').hidden = false;
+    decision = 'autre fournisseur';
   } else {
-    const ht = r.prix / (1 + P.tva), marge = ht - r.cout;
-    set('price', eur(r.prix, Number.isInteger(r.prix) ? 0 : 2));
-    set('r-pvht', eur(ht)); set('r-marge', `${eur(marge)} (${Math.round(marge / ht * 100)} %)`);
-    if (r.statut === 'ok'){ pill.className='score-badge ok-badge'; pill.textContent='● OK : prix conseillé – 10 %'; decision='OK'; }
-    else { pill.className='score-badge warn-badge'; pill.textContent='● OK : prix plancher appliqué'; decision='OK, prix plancher';
-      notes.push(['info', `Le prix conseillé – 10 % (${eur(r.cible,0)}) laissait moins de 20 % de marge : le prix est remonté au plancher, sans dépasser le prix conseillé.`]); }
-    if (conc !== null && r.prix > conc) notes.push(['warn', `Un concurrent est moins cher (${eur(conc)}). Vérifiez son offre (même modèle, en stock) avant de proposer ce prix.`]);
+    pill.className = 'score-badge ok-badge'; pill.textContent = '● Twindis moins cher';
+    notes.push(['info', r.cout === autre ? 'Même coût chez Twindis et chez l\'autre fournisseur.' : `Twindis revient ${eur(autre - r.cout)} HT moins cher que l'autre fournisseur, commission comprise.`]);
+    $('range-basis').textContent = 'Fourchette calculée sur le coût Twindis.'; $('range-basis').hidden = false;
+    decision = 'Twindis';
   }
   pill.hidden = false;
   $('notes').innerHTML = '';
   notes.forEach(([cls, t]) => { const li = document.createElement('li'); li.className = cls; li.textContent = t; $('notes').appendChild(li); });
   lastText = [
-    `Achat HT : ${eur(achat)} + commission EBSC ${eur(r.com)}${liv ? ' + livraison ' + eur(liv) : ''}${eco ? ' + écotaxe ' + eur(eco) : ''} = coût ${eur(r.cout)}`,
-    `Prix conseillé Twindis : ${eur(conseille)} · plancher ${eur(r.plancher)}`,
-    r.prix === null ? 'Décision : STOP, ne pas commander chez Twindis' : `Prix de vente TTC : ${eur(r.prix, Number.isInteger(r.prix)?0:2)} (${decision})`,
-    ...notes.filter(n=>n[0]==='warn').map(n=>'À faire : ' + n[1])
+    `Achat Twindis HT : ${eur(achat)} + commission EBSC ${eur(r.com)} (livraison et écotaxe incluses) = coût ${eur(r.cout)} HT`,
+    autre !== null ? `Autre fournisseur HT : ${eur(autre)} → commander chez ${decision}` : '',
+    `Prix de vente TTC : entre ${eurR(r.floor)} (plancher) et ${eurR(r.top)}`
   ].filter(Boolean).join('\n');
 }
 
-['achat','conseille','livraison','ecotaxe','concurrent'].forEach(id => $(id).addEventListener('input', () => { $('example-note').hidden = true; render(); }));
+FIELDS.forEach(id => $(id).addEventListener('input', () => { $('example-note').hidden = true; render(); }));
 $('form').addEventListener('submit', e => e.preventDefault());
-$('reset').addEventListener('click', () => { ['achat','conseille','livraison','ecotaxe','concurrent'].forEach(id => $(id).value=''); $('example-note').hidden = true; render(); $('achat').focus(); });
+$('reset').addEventListener('click', () => { FIELDS.forEach(id => $(id).value = ''); $('example-note').hidden = true; render(); $('achat').focus(); });
 $('copy').addEventListener('click', () => {
   if (!lastText){ $('copy-status').textContent = 'Rien à copier.'; return; }
   navigator.clipboard.writeText(lastText).then(() => { $('copy-status').textContent = 'Copié.'; })
     .catch(() => { $('copy-status').textContent = 'Copie impossible : sélectionnez le détail à la main.'; });
 });
 
-$('achat').value = 190; $('conseille').value = 749;
+$('achat').value = 190;
 render();
 </script>
+
 </body>
 </html>
