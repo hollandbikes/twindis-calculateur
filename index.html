@@ -103,6 +103,12 @@ input[type="number"] { -moz-appearance: textfield; }
 .range-box small { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
 .range-basis { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 10px; }
 @media (max-width: 420px) { .range { grid-template-columns: 1fr; } }
+.seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.seg label { cursor: pointer; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg span { display: inline-block; padding: 8px 14px; border: 1.5px solid var(--border); border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--ink-soft); background: var(--white); }
+.seg input:checked + span { border-color: var(--accent); background: #e8f5f0; color: var(--accent-dk); }
+.seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
 </head>
 <body>
@@ -122,6 +128,15 @@ input[type="number"] { -moz-appearance: textfield; }
   <form class="card" id="form" autocomplete="off" novalidate>
     <h2 class="card-title">Prix d'achat</h2>
     <div class="field-grid">
+      <div class="field span-2">
+        <label id="type-label">Type de produit</label>
+        <div class="seg" role="radiogroup" aria-labelledby="type-label">
+          <label><input type="radio" name="type" value="batterie" checked><span>Batterie</span></label>
+          <label><input type="radio" name="type" value="chargeur"><span>Chargeur</span></label>
+          <label><input type="radio" name="type" value="autre"><span>Écran / autre</span></label>
+        </div>
+        <span class="hint" id="type-hint">Commission EBSC : 10 %, minimum 10 €, maximum 40 €</span>
+      </div>
       <div class="field">
         <label for="achat">Prix d'achat Twindis HT (€) <span class="req">*</span></label>
         <input type="number" id="achat" inputmode="decimal" min="0" step="0.01">
@@ -172,16 +187,16 @@ input[type="number"] { -moz-appearance: textfield; }
     <table class="detail">
       <tbody>
         <tr><td>Prix d'achat Twindis HT</td><td id="r-achat">–</td></tr>
-        <tr><td>Commission EBSC HT<small id="r-com-detail">10 % de l'achat, entre 10 € et 40 € · livraison et écotaxe incluses</small></td><td id="r-com">–</td></tr>
+        <tr><td>Commission EBSC HT<small id="r-com-detail">10 % de l'achat · livraison et écotaxe incluses</small></td><td id="r-com">–</td></tr>
         <tr class="total"><td>Coût de revient Twindis HT</td><td id="r-cout">–</td></tr>
         <tr><td>Prix d'achat autre fournisseur HT</td><td id="r-autre">–</td></tr>
         <tr><td>Écart Twindis / autre fournisseur HT<small>Positif : Twindis plus cher</small></td><td id="r-ecart">–</td></tr>
-        <tr><td>Prix plancher TTC<small>20 % de marge sur le prix HT, arrondi au prix en 9 supérieur</small></td><td id="r-floor">–</td></tr>
+        <tr><td>Prix plancher TTC<small>20 % de marge sur le prix HT, arrondi au-dessus (X,90 € sous 100 €, prix en 9 au-delà)</small></td><td id="r-floor">–</td></tr>
         <tr><td>Prix de vente conseillé Twindis TTC</td><td id="r-conseille">–</td></tr>
-        <tr class="highlight"><td>Prix haut TTC<small id="r-top-detail">40 % de marge sur le prix HT, arrondi au prix en 9 inférieur, sans dépasser le prix conseillé</small></td><td id="r-top">–</td></tr>
+        <tr class="highlight"><td>Prix haut TTC<small id="r-top-detail">40 % de marge sur le prix HT, arrondi en dessous (X,90 € sous 100 €, prix en 9 au-delà), sans dépasser le prix conseillé</small></td><td id="r-top">–</td></tr>
       </tbody>
     </table>
-    <p class="params">Règle : commission EBSC 10 % du prix d'achat Twindis (min. 10 €, max. 40 € HT, livraison et écotaxe incluses) · fourchette de vente entre 20 % et 40 % de marge sur le prix HT, plafonnée au prix conseillé Twindis · TVA 20 %</p>
+    <p class="params">Règle : commission EBSC 10 % du prix d'achat Twindis (min. 10 €, max. 40 € HT ; chargeurs : 10 % sans minimum ; livraison et écotaxe incluses) · fourchette de vente entre 20 % et 40 % de marge sur le prix HT, arrondie à X,90 € sous 100 € et au prix en 9 au-delà, plafonnée au prix conseillé Twindis · TVA 20 %</p>
   </section>
 
   <div class="nav-bar">
@@ -202,15 +217,21 @@ const eurR = v => eur(v, Number.isInteger(v) ? 0 : 2);
 const num = id => { const v = parseFloat(String($(id).value).replace(',','.')); return isFinite(v) && v > 0 ? v : null; };
 const down9 = x => Math.floor((x + 1) / 10) * 10 - 1;
 const up9 = x => Math.ceil((x + 1) / 10) * 10 - 1;
+const r2 = x => Math.round(x * 100) / 100;
+// Sous 100 € : arrondi à X,90 ; au-delà : prix en 9
+const roundUp = x => x < 100 ? Math.min(r2(Math.ceil(r2(x) + 0.1) - 0.1), up9(x)) : up9(x);
+const roundDown = x => x < 100 ? r2(Math.floor(r2(x) + 0.1) - 0.1) : Math.max(down9(x), 99.9);
 const ttcFor = (cout, marge) => cout / (1 - marge) * (1 + P.tva);
 const margeOf = (ttc, cout) => { const ht = ttc / (1 + P.tva); return (ht - cout) / ht; };
 
-function compute(achat, autre, conseille){
-  const com = Math.min(Math.max(achat * P.com, P.comMin), P.comMax);
+const typeOf = () => document.querySelector('input[name="type"]:checked').value;
+const comMinFor = t => t === 'chargeur' ? 0 : P.comMin;
+function compute(achat, autre, conseille, type){
+  const com = Math.min(Math.max(achat * P.com, comMinFor(type)), P.comMax);
   const cout = achat + com;
   const base = cout;
-  const floor = up9(ttcFor(base, P.margeMin));
-  const top40 = down9(ttcFor(base, P.margeMax));
+  const floor = roundUp(ttcFor(base, P.margeMin));
+  const top40 = roundDown(ttcFor(base, P.margeMax));
   const plafonne = conseille !== null && top40 > conseille;
   const top = Math.max(plafonne ? conseille : top40, floor);
   return { com, cout, base, floor, top, plafonne, horsPrix: conseille !== null && floor > conseille, autreMoinsCher: autre !== null && autre < cout };
@@ -224,13 +245,14 @@ function render(){
   if (achat === null){
     set('price','–'); pill.hidden = true; $('range').hidden = true; $('range-basis').hidden = true;
     ['r-achat','r-com','r-cout','r-autre','r-ecart','r-conseille','r-floor','r-top'].forEach(i => set(i,'–'));
-    set('r-com-detail', '10 % de l\'achat, entre 10 € et 40 € · livraison et écotaxe incluses');
+    set('r-com-detail', '10 % de l\'achat · livraison et écotaxe incluses');
     $('notes').innerHTML = '<li class="info">Saisissez le prix d\'achat Twindis HT pour obtenir le coût de revient et la fourchette de prix.</li>';
     lastText = ''; return;
   }
-  const r = compute(achat, autre, conseille);
+  const type = typeOf();
+  const r = compute(achat, autre, conseille, type);
   const raw = achat * P.com;
-  set('r-com-detail', (raw < P.comMin ? 'Minimum de 10 € appliqué' : raw > P.comMax ? 'Maximum de 40 € appliqué' : '10 % de l\'achat, entre 10 € et 40 €') + ' · livraison et écotaxe incluses');
+  set('r-com-detail', (raw < comMinFor(type) ? 'Minimum de 10 € appliqué' : raw > P.comMax ? 'Maximum de 40 € appliqué' : type === 'chargeur' ? '10 % de l\'achat, sans minimum (chargeur)' : '10 % de l\'achat') + ' · livraison et écotaxe incluses');
   set('price', eur(r.cout));
   set('r-achat', eur(achat)); set('r-com', eur(r.com)); set('r-cout', eur(r.cout));
   set('r-autre', autre !== null ? eur(autre) : '–');
@@ -241,7 +263,7 @@ function render(){
   set('floor-m', `Ne jamais vendre en dessous · marge ${Math.round(margeOf(r.floor, r.base) * 100)} %`);
   set('top-m', `Marge ${Math.round(margeOf(r.top, r.base) * 100)} %`);
   $('range').hidden = false;
-  set('r-top-detail', r.plafonne ? 'Plafonné au prix conseillé Twindis' : r.horsPrix ? 'Égal au plancher : le prix conseillé est trop bas' : '40 % de marge sur le prix HT, arrondi au prix en 9 inférieur, sans dépasser le prix conseillé');
+  set('r-top-detail', r.plafonne ? 'Plafonné au prix conseillé Twindis' : r.horsPrix ? 'Égal au plancher : le prix conseillé est trop bas' : '40 % de marge sur le prix HT, arrondi en dessous (X,90 € sous 100 €, prix en 9 au-delà), sans dépasser le prix conseillé');
   if (r.plafonne && !r.horsPrix) set('top-m', `Marge ${Math.round(margeOf(r.top, r.base) * 100)} % · plafonné au prix conseillé`);
 
   let decision;
@@ -267,6 +289,7 @@ function render(){
   $('notes').innerHTML = '';
   notes.forEach(([cls, t]) => { const li = document.createElement('li'); li.className = cls; li.textContent = t; $('notes').appendChild(li); });
   lastText = [
+    `Produit : ${{batterie:'batterie',chargeur:'chargeur',autre:'écran / autre'}[type]}`,
     `Achat Twindis HT : ${eur(achat)} + commission EBSC ${eur(r.com)} (livraison et écotaxe incluses) = coût ${eur(r.cout)} HT`,
     autre !== null ? `Autre fournisseur HT : ${eur(autre)} → commander chez ${decision}` : '',
     conseille !== null ? `Prix conseillé Twindis TTC : ${eurR(conseille)}` : '',
@@ -276,8 +299,12 @@ function render(){
 }
 
 FIELDS.forEach(id => $(id).addEventListener('input', () => { $('example-note').hidden = true; render(); }));
+document.querySelectorAll('input[name="type"]').forEach(el => el.addEventListener('change', () => {
+  $('type-hint').textContent = typeOf() === 'chargeur' ? 'Commission EBSC : 10 % sans minimum, maximum 40 €' : 'Commission EBSC : 10 %, minimum 10 €, maximum 40 €';
+  $('example-note').hidden = true; render();
+}));
 $('form').addEventListener('submit', e => e.preventDefault());
-$('reset').addEventListener('click', () => { FIELDS.forEach(id => $(id).value = ''); $('example-note').hidden = true; render(); $('achat').focus(); });
+$('reset').addEventListener('click', () => { FIELDS.forEach(id => $(id).value = ''); document.querySelector('input[name="type"][value="batterie"]').checked = true; $('type-hint').textContent = 'Commission EBSC : 10 %, minimum 10 €, maximum 40 €'; $('example-note').hidden = true; render(); $('achat').focus(); });
 $('copy').addEventListener('click', () => {
   if (!lastText){ $('copy-status').textContent = 'Rien à copier.'; return; }
   navigator.clipboard.writeText(lastText).then(() => { $('copy-status').textContent = 'Copié.'; })
