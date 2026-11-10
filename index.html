@@ -113,10 +113,6 @@ input[type="number"] { -moz-appearance: textfield; }
   <form class="card" id="form" autocomplete="off" novalidate>
     <h2 class="card-title">Fiche Twindis</h2>
     <div class="field-grid">
-      <div class="field span-2">
-        <label for="nom">Batterie</label>
-        <input type="text" id="nom" placeholder="ex. Shimano BT-E8036 630 Wh">
-      </div>
       <div class="field">
         <label for="achat">Prix d'achat HT (€) <span class="req">*</span></label>
         <input type="number" id="achat" inputmode="decimal" min="0" step="0.01">
@@ -242,9 +238,7 @@ function render(){
   pill.hidden = false;
   $('notes').innerHTML = '';
   notes.forEach(([cls, t]) => { const li = document.createElement('li'); li.className = cls; li.textContent = t; $('notes').appendChild(li); });
-  const nom = $('nom').value.trim();
   lastText = [
-    nom ? `Batterie : ${nom}` : null,
     `Achat HT : ${eur(achat)} + commission EBSC ${eur(r.com)}${liv ? ' + livraison ' + eur(liv) : ''}${eco ? ' + écotaxe ' + eur(eco) : ''} = coût ${eur(r.cout)}`,
     `Prix conseillé Twindis : ${eur(conseille)} · plancher ${eur(r.plancher)}`,
     r.prix === null ? 'Décision : STOP, ne pas commander chez Twindis' : `Prix de vente TTC : ${eur(r.prix, Number.isInteger(r.prix)?0:2)} (${decision})`,
@@ -252,16 +246,16 @@ function render(){
   ].filter(Boolean).join('\n');
 }
 
-['nom','achat','conseille','livraison','ecotaxe','concurrent'].forEach(id => $(id).addEventListener('input', () => { $('example-note').hidden = true; render(); }));
+['achat','conseille','livraison','ecotaxe','concurrent'].forEach(id => $(id).addEventListener('input', () => { $('example-note').hidden = true; render(); }));
 $('form').addEventListener('submit', e => e.preventDefault());
-$('reset').addEventListener('click', () => { ['nom','achat','conseille','livraison','ecotaxe','concurrent'].forEach(id => $(id).value=''); $('example-note').hidden = true; render(); $('achat').focus(); });
+$('reset').addEventListener('click', () => { ['achat','conseille','livraison','ecotaxe','concurrent'].forEach(id => $(id).value=''); $('example-note').hidden = true; render(); $('achat').focus(); });
 $('copy').addEventListener('click', () => {
   if (!lastText){ $('copy-status').textContent = 'Rien à copier.'; return; }
   navigator.clipboard.writeText(lastText).then(() => { $('copy-status').textContent = 'Copié.'; })
     .catch(() => { $('copy-status').textContent = 'Copie impossible : sélectionnez le détail à la main.'; });
 });
 
-$('nom').value = 'Shimano BT-E8036 630 Wh'; $('achat').value = 190; $('conseille').value = 749;
+$('achat').value = 190; $('conseille').value = 749;
 render();
 </script>
 </body>
