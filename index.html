@@ -132,6 +132,11 @@ input[type="number"] { -moz-appearance: textfield; }
         <input type="number" id="autre" inputmode="decimal" min="0" step="0.01">
         <span class="hint">Facultatif : pour comparer, frais de port compris s'il y en a</span>
       </div>
+      <div class="field span-2">
+        <label for="conseille">Prix de vente conseillé Twindis TTC (€)</label>
+        <input type="number" id="conseille" inputmode="decimal" min="0" step="0.01">
+        <span class="hint">Facultatif : « Consumentenadviesprijs » sur la fiche Twindis. Le prix haut ne le dépassera pas.</span>
+      </div>
     </div>
     <p class="included">Frais de livraison et écotaxe Twindis : inclus dans la commission EBSC, rien à ajouter.</p>
     <p class="example" id="example-note">Exemple prérempli : Shimano BT-E8036, relevé sur Twindis le 02/11/2026.</p>
@@ -172,10 +177,11 @@ input[type="number"] { -moz-appearance: textfield; }
         <tr><td>Prix d'achat autre fournisseur HT</td><td id="r-autre">–</td></tr>
         <tr><td>Écart Twindis / autre fournisseur HT<small>Positif : Twindis plus cher</small></td><td id="r-ecart">–</td></tr>
         <tr><td>Prix plancher TTC<small>20 % de marge sur le prix HT, arrondi au prix en 9 supérieur</small></td><td id="r-floor">–</td></tr>
-        <tr class="highlight"><td>Prix haut TTC<small>40 % de marge sur le prix HT, arrondi au prix en 9 inférieur</small></td><td id="r-top">–</td></tr>
+        <tr><td>Prix de vente conseillé Twindis TTC</td><td id="r-conseille">–</td></tr>
+        <tr class="highlight"><td>Prix haut TTC<small id="r-top-detail">40 % de marge sur le prix HT, arrondi au prix en 9 inférieur, sans dépasser le prix conseillé</small></td><td id="r-top">–</td></tr>
       </tbody>
     </table>
-    <p class="params">Règle : commission EBSC 10 % du prix d'achat Twindis (min. 10 €, max. 40 € HT, livraison et écotaxe incluses) · fourchette de vente entre 20 % et 40 % de marge sur le prix HT · TVA 20 %</p>
+    <p class="params">Règle : commission EBSC 10 % du prix d'achat Twindis (min. 10 €, max. 40 € HT, livraison et écotaxe incluses) · fourchette de vente entre 20 % et 40 % de marge sur le prix HT, plafonnée au prix conseillé Twindis · TVA 20 %</p>
   </section>
 
   <div class="nav-bar">
@@ -189,7 +195,7 @@ input[type="number"] { -moz-appearance: textfield; }
 
 <script>
 const P = { com:0.10, comMin:10, comMax:40, margeMin:0.20, margeMax:0.40, tva:0.20 };
-const FIELDS = ['achat','autre'];
+const FIELDS = ['achat','autre','conseille'];
 const $ = id => document.getElementById(id);
 const eur = (v, d=2) => v.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}) + ' €';
 const eurR = v => eur(v, Number.isInteger(v) ? 0 : 2);
@@ -199,39 +205,44 @@ const up9 = x => Math.ceil((x + 1) / 10) * 10 - 1;
 const ttcFor = (cout, marge) => cout / (1 - marge) * (1 + P.tva);
 const margeOf = (ttc, cout) => { const ht = ttc / (1 + P.tva); return (ht - cout) / ht; };
 
-function compute(achat, autre){
+function compute(achat, autre, conseille){
   const com = Math.min(Math.max(achat * P.com, P.comMin), P.comMax);
   const cout = achat + com;
   const base = autre !== null && autre < cout ? autre : cout;
   const floor = up9(ttcFor(base, P.margeMin));
-  const top = Math.max(down9(ttcFor(base, P.margeMax)), floor);
-  return { com, cout, base, floor, top, autreMoinsCher: autre !== null && autre < cout };
+  const top40 = down9(ttcFor(base, P.margeMax));
+  const plafonne = conseille !== null && top40 > conseille;
+  const top = Math.max(plafonne ? conseille : top40, floor);
+  return { com, cout, base, floor, top, plafonne, horsPrix: conseille !== null && floor > conseille, autreMoinsCher: autre !== null && autre < cout };
 }
 
 let lastText = '';
 function render(){
-  const achat = num('achat'), autre = num('autre');
+  const achat = num('achat'), autre = num('autre'), conseille = num('conseille');
   const set = (id, t) => { $(id).textContent = t; };
   const pill = $('pill'), notes = [];
   if (achat === null){
     set('price','–'); pill.hidden = true; $('range').hidden = true; $('range-basis').hidden = true;
-    ['r-achat','r-com','r-cout','r-autre','r-ecart','r-floor','r-top'].forEach(i => set(i,'–'));
+    ['r-achat','r-com','r-cout','r-autre','r-ecart','r-conseille','r-floor','r-top'].forEach(i => set(i,'–'));
     set('r-com-detail', '10 % de l\'achat, entre 10 € et 40 € · livraison et écotaxe incluses');
     $('notes').innerHTML = '<li class="info">Saisissez le prix d\'achat Twindis HT pour obtenir le coût de revient et la fourchette de prix.</li>';
     lastText = ''; return;
   }
-  const r = compute(achat, autre);
+  const r = compute(achat, autre, conseille);
   const raw = achat * P.com;
   set('r-com-detail', (raw < P.comMin ? 'Minimum de 10 € appliqué' : raw > P.comMax ? 'Maximum de 40 € appliqué' : '10 % de l\'achat, entre 10 € et 40 €') + ' · livraison et écotaxe incluses');
   set('price', eur(r.cout));
   set('r-achat', eur(achat)); set('r-com', eur(r.com)); set('r-cout', eur(r.cout));
   set('r-autre', autre !== null ? eur(autre) : '–');
   set('r-ecart', autre !== null ? (r.cout - autre >= 0 ? '+' : '') + eur(r.cout - autre) : '–');
+  set('r-conseille', conseille !== null ? eurR(conseille) : '–');
   set('r-floor', eurR(r.floor)); set('r-top', eurR(r.top));
   set('floor', eurR(r.floor)); set('top', eurR(r.top));
   set('floor-m', `Ne jamais vendre en dessous · marge ${Math.round(margeOf(r.floor, r.base) * 100)} %`);
   set('top-m', `Marge ${Math.round(margeOf(r.top, r.base) * 100)} %`);
   $('range').hidden = false;
+  set('r-top-detail', r.plafonne ? 'Plafonné au prix conseillé Twindis' : r.horsPrix ? 'Égal au plancher : le prix conseillé est trop bas' : '40 % de marge sur le prix HT, arrondi au prix en 9 inférieur, sans dépasser le prix conseillé');
+  if (r.plafonne && !r.horsPrix) set('top-m', `Marge ${Math.round(margeOf(r.top, r.base) * 100)} % · plafonné au prix conseillé`);
 
   let decision;
   if (autre === null){
@@ -248,13 +259,19 @@ function render(){
     $('range-basis').textContent = 'Fourchette calculée sur le coût Twindis.'; $('range-basis').hidden = false;
     decision = 'Twindis';
   }
+  if (r.horsPrix){
+    pill.className = 'score-badge ko-badge'; pill.textContent = '● Plancher au-dessus du prix conseillé';
+    notes.unshift(['stop', `Le prix plancher (${eurR(r.floor)}) dépasse le prix conseillé Twindis (${eurR(conseille)}). Le produit sera plus cher que le prix public conseillé : vérifiez avec le client avant de commander.`]);
+  }
   pill.hidden = false;
   $('notes').innerHTML = '';
   notes.forEach(([cls, t]) => { const li = document.createElement('li'); li.className = cls; li.textContent = t; $('notes').appendChild(li); });
   lastText = [
     `Achat Twindis HT : ${eur(achat)} + commission EBSC ${eur(r.com)} (livraison et écotaxe incluses) = coût ${eur(r.cout)} HT`,
     autre !== null ? `Autre fournisseur HT : ${eur(autre)} → commander chez ${decision}` : '',
-    `Prix de vente TTC : entre ${eurR(r.floor)} (plancher) et ${eurR(r.top)}`
+    conseille !== null ? `Prix conseillé Twindis TTC : ${eurR(conseille)}` : '',
+    `Prix de vente TTC : entre ${eurR(r.floor)} (plancher) et ${eurR(r.top)}`,
+    r.horsPrix ? 'Attention : le plancher dépasse le prix conseillé Twindis' : ''
   ].filter(Boolean).join('\n');
 }
 
@@ -267,7 +284,7 @@ $('copy').addEventListener('click', () => {
     .catch(() => { $('copy-status').textContent = 'Copie impossible : sélectionnez le détail à la main.'; });
 });
 
-$('achat').value = 190;
+$('achat').value = 190; $('conseille').value = 749;
 render();
 </script>
 
