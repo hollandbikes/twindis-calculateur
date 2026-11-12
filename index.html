@@ -42,7 +42,7 @@ body { font-family: var(--sans); background: var(--surface); color: var(--ink); 
 /* ── LAYOUT ── */
 .main { max-width: 840px; margin: 0 auto; padding: 32px 20px 80px; }
 .section-eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
-.section-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--ink); }
+.section-title { font-size: 22px; font-weight: 700; margin-bottom: 18px; color: var(--ink); }
 .section-intro { color: var(--ink-soft); font-size: 14px; margin-bottom: 24px; max-width: 65ch; }
 
 /* ── CARDS ── */
@@ -178,6 +178,10 @@ input[type="number"] { -moz-appearance: textfield; }
 .bar-tip small { display: block; opacity: .75; font-size: 11px; }
 .bar-tip::after { content: ''; position: absolute; left: 50%; top: 100%; margin-left: -5px; border: 5px solid transparent; border-top-color: var(--ink); }
 .bar-tip[hidden] { display: none; }
+.price-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.price-eco { font-size: 15px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.price-eco b { color: var(--ink); font-size: 18px; }
+.price-eco[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -192,7 +196,6 @@ input[type="number"] { -moz-appearance: textfield; }
 <main class="main">
   <p class="section-eyebrow">Twindis · Magasins</p>
   <h1 class="section-title">Prix Twindis en magasin</h1>
-  <p class="section-intro">Prix de vente TTC = 2 × le prix d'achat Twindis HT, sans jamais dépasser le prix conseillé. Même prix en magasin et sur le site. Recopiez les prix de la fiche produit de votre compte Twindis.</p>
 
   <form class="card" id="form" autocomplete="off" novalidate>
     <h2 class="card-title">Fiche Twindis</h2>
@@ -205,7 +208,7 @@ input[type="number"] { -moz-appearance: textfield; }
       <div class="field">
         <label for="conseille">Prix de vente conseillé TTC (€) <span class="req">*</span></label>
         <input type="number" id="conseille" inputmode="decimal" min="0" step="0.01">
-        <span class="hint">« Recommended Consumer Price » sur la fiche Twindis</span>
+        <span class="hint">« Recommended Consumer Price » sur la fiche Twindis, hors écotaxe</span>
       </div>
       <div class="field span-2">
         <label for="autre">Prix d'achat chez un autre fournisseur HT (€)</label>
@@ -218,7 +221,7 @@ input[type="number"] { -moz-appearance: textfield; }
           <label><input type="radio" name="type" value="batterie" checked><span>Batterie</span></label>
           <label><input type="radio" name="type" value="autre"><span>Chargeur / écran / autre</span></label>
         </div>
-        <span class="hint">Sert uniquement pour l'écotaxe (forfait de 15 € TTC par batterie)</span>
+        <span class="hint">Sert pour l'écotaxe : 15 € TTC par batterie, facturée au client sur une ligne séparée</span>
       </div>
     </div>
     <p class="example" id="example-note">Exemple prérempli : Bosch PowerTube 625 SMART, relevé sur Twindis le 10/11/2026.</p>
@@ -229,7 +232,7 @@ input[type="number"] { -moz-appearance: textfield; }
     <div class="result-head">
       <div>
         <p class="price-label">Prix de vente conseillé Holland Bikes TTC</p>
-        <div class="price" id="price">–</div>
+        <div class="price-row"><div class="price" id="price">–</div><div class="price-eco" id="price-eco" hidden></div></div>
         <p class="price-sub" id="price-sub"></p>
       </div>
       <span class="score-badge" id="pill" hidden></span>
@@ -280,12 +283,13 @@ input[type="number"] { -moz-appearance: textfield; }
         <tr><td>Commission EBSC HT<small>15 % du prix d'achat HT</small></td><td id="r-com">–</td></tr>
         <tr class="total"><td>Facturé par EBSC au magasin HT<small>Prix d'achat + commission</small></td><td id="r-facture">–</td></tr>
         <tr><td>Marge magasin après commission HT<small id="r-marge2-m">Prix de vente HT – (achat + commission)</small></td><td id="r-marge2">–</td></tr>
-        <tr><td>Écotaxe<small>Forfait EBSC par batterie, refacturé à part</small></td><td id="r-eco">–</td></tr>
+        <tr><td>Écotaxe client TTC<small>Ligne séparée sur la facture client · refacturée au magasin par EBSC au même montant</small></td><td id="r-eco">–</td></tr>
+        <tr class="total"><td>Total payé par le client TTC<small>Prix de vente + écotaxe</small></td><td id="r-total">–</td></tr>
         <tr><td>Frais de livraison HT<small>Réglés par EBSC, forfait par envoi Twindis (pas par article), refacturés à part</small></td><td>25,35 €</td></tr>
         <tr><td>Prix d'achat autre fournisseur HT</td><td id="r-autre">–</td></tr>
       </tbody>
     </table>
-    <p class="params">Règle EBSC : prix de vente TTC = 2 × prix d'achat Twindis HT, plafonné au prix conseillé · commission EBSC 15 % du prix d'achat HT · écotaxe 15 € TTC par batterie et livraison 25,35 € HT par envoi refacturées à part, hors calcul de marge · marge = (prix de vente HT – prix d'achat HT) ÷ prix d'achat HT · arrondis à X,90 € sous 100 € et au prix en 9 au-delà · TVA 20 %</p>
+    <p class="params">Règle EBSC : prix de vente TTC = 2 × prix d'achat Twindis HT, plafonné au prix conseillé · commission EBSC 15 % du prix d'achat HT · écotaxe 15 € TTC par batterie facturée au client sur une ligne séparée (en plus du prix de vente) · livraison 25,35 € HT par envoi refacturée à part · écotaxe et livraison hors calcul de marge · marge = (prix de vente HT – prix d'achat HT) ÷ prix d'achat HT · arrondis à X,90 € sous 100 € et au prix en 9 au-delà · TVA 20 %</p>
   </section>
 
   <div class="nav-bar">
@@ -407,9 +411,10 @@ function render(){
   const set = (id, t) => { $(id).textContent = t; };
   const pill = $('pill'), notes = [];
   const bat = typeOf() === 'batterie';
-  set('r-eco', bat ? `${eur(P.ecoTtc)} TTC (${eur(P.ecoTtc / (1 + P.tva))} HT)` : '–');
+  const eco = bat ? P.ecoTtc : null;
+  set('r-eco', bat ? `${eur(P.ecoTtc)} TTC (${eur(P.ecoTtc / (1 + P.tva))} HT)` : 'à confirmer');
   if (achat === null){
-    set('price','–'); set('price-sub',''); pill.hidden = true; $('viz').hidden = true; $('marge-box').hidden = true;
+    set('price','–'); set('price-sub',''); $('price-eco').hidden = true; set('r-total','–'); pill.hidden = true; $('viz').hidden = true; $('marge-box').hidden = true;
     ['r-achat','r-price','r-ht','r-marge','r-com','r-facture','r-marge2','r-autre'].forEach(i => set(i,'–'));
     $('notes').innerHTML = '<li class="info">Saisissez le prix d\'achat Twindis HT et le prix de vente conseillé.</li>';
     lastText = ''; return;
@@ -423,6 +428,11 @@ function render(){
   set('r-autre', autre !== null ? eur(autre) : '–');
 
   set('price', eurR(r.prix));
+  const pe = $('price-eco'); pe.innerHTML = ''; pe.hidden = false;
+  if (eco !== null){
+    pe.append(`+ ${eurR(eco)} d'écotaxe = `); const tb = document.createElement('b'); tb.textContent = `${eurR(r2(r.prix + eco))} TTC`; pe.append(tb);
+    set('r-total', eurR(r2(r.prix + eco)));
+  } else { pe.append('+ écotaxe à confirmer'); set('r-total', `${eurR(r.prix)} + écotaxe`); }
   set('price-sub', r.plafonne ? `Plafonné au prix conseillé Twindis (2 × l'achat = ${eurR(r.cible)})` : `2 × le prix d'achat Twindis HT`);
   $('price-sub').className = 'price-sub' + (r.plafonne ? ' warn' : '');
   set('m-coef', fmt(r.coef)); set('m-eur', eur(r.marge)); set('m-pct', `${fmt(r.pct, 0)} %`);
@@ -465,13 +475,14 @@ function render(){
       decision = 'autre fournisseur';
     } else notes.push(['info', `Twindis + commission EBSC (${eur(r.facture)}) revient ${eur(autre - r.facture)} HT moins cher que l'autre fournisseur.`]);
   }
-  notes.push(['info', `Refacturés à part par EBSC, hors calcul de marge : ${bat ? 'écotaxe 15 € TTC par batterie, ' : ''}livraison 25,35 € HT par envoi Twindis.`]);
+  notes.push(['info', `${bat ? 'Écotaxe de 15 € TTC à facturer au client sur une ligne séparée (refacturée au magasin par EBSC au même montant). ' : ''}Livraison 25,35 € HT par envoi Twindis, refacturée à part par EBSC. Les deux sont hors calcul de marge.`]);
   pill.hidden = false;
   $('notes').innerHTML = '';
   notes.forEach(([cls, t]) => { const li = document.createElement('li'); li.className = cls; li.textContent = t; $('notes').appendChild(li); });
   lastText = [
     `Prix d'achat Twindis HT : ${eur(achat)}`,
     `Prix de vente Holland Bikes TTC : ${eurR(r.prix)}${r.plafonne ? ' (plafonné au prix conseillé)' : ' (2 × achat)'}`,
+    eco !== null ? `+ écotaxe ${eurR(eco)} TTC (ligne séparée) = ${eurR(r2(r.prix + eco))} TTC payés par le client` : '+ écotaxe à confirmer',
     conseille !== null ? `Prix conseillé Twindis TTC : ${eurR(conseille)}` : '',
     `Coef ${fmt(r.coef)} · marge nette ${eur(r.marge)} HT (${fmt(r.pct, 0)} %)`,
     `Facturé par EBSC : ${eur(r.facture)} HT (achat + commission 15 %) + ${bat ? 'écotaxe 15 € TTC + ' : ''}livraison 25,35 € HT par envoi`,
