@@ -224,7 +224,6 @@ input[type="number"] { -moz-appearance: textfield; }
         <span class="hint">Sert pour l'écotaxe : 15 € TTC par batterie, facturée au client sur une ligne séparée</span>
       </div>
     </div>
-    <p class="example" id="example-note">Exemple prérempli : Bosch PowerTube 625 SMART, relevé sur Twindis le 10/11/2026.</p>
   </form>
 
   <section class="card" aria-live="polite">
@@ -518,13 +517,13 @@ function render(){
   wrap.addEventListener('click', e => { const el = e.target.closest('[data-tip]'); el ? show(el, e.clientX) : hide(); });
 })();
 
-FIELDS.forEach(id => $(id).addEventListener('input', () => { $('example-note').hidden = true; render(); }));
-document.querySelectorAll('input[name="type"]').forEach(el => el.addEventListener('change', () => { $('example-note').hidden = true; render(); }));
+FIELDS.forEach(id => $(id).addEventListener('input', () => { render(); }));
+document.querySelectorAll('input[name="type"]').forEach(el => el.addEventListener('change', () => { render(); }));
 $('form').addEventListener('submit', e => e.preventDefault());
 $('reset').addEventListener('click', () => {
   FIELDS.forEach(id => $(id).value = '');
   document.querySelector('input[name="type"][value="batterie"]').checked = true;
-  $('example-note').hidden = true; render(); $('achat').focus();
+  render(); $('achat').focus();
 });
 $('copy').addEventListener('click', () => {
   if (!lastText){ $('copy-status').textContent = 'Rien à copier.'; return; }
@@ -532,7 +531,6 @@ $('copy').addEventListener('click', () => {
     .catch(() => { $('copy-status').textContent = 'Copie impossible : sélectionnez le détail à la main.'; });
 });
 
-$('achat').value = 279; $('conseille').value = 899;
 render();
 </script>
 
