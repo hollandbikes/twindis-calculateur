@@ -108,11 +108,9 @@ input[type="number"] { -moz-appearance: textfield; }
 .bar-cost { position: absolute; left: 0; top: 0; bottom: 0; background: var(--warn); border-radius: 6px 0 0 6px; opacity: .85; }
 .bar-zone { position: absolute; top: 0; bottom: 0; background: var(--accent); opacity: .85; }
 .bar-zone.thin { width: 3px !important; }
-.bar-mark { position: absolute; top: -6px; bottom: -6px; width: 0; }
+.bar-mark { position: absolute; top: -6px; bottom: -6px; width: 0; z-index: 2; }
 .bar-mark.other { border-left: 3px dashed #7f1d1d; margin-left: -1.5px; }
 .bar-mark.rcp { border-left: 3px solid var(--navy); margin-left: -1.5px; }
-.bar-mark.rcp span { position: absolute; bottom: 100%; right: 0; margin-bottom: 4px; white-space: nowrap; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--navy); font-weight: 700; }
-.bar-mark.rcp.flip span { right: auto; left: -3px; }
 .bar-scale { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--na); margin-top: 8px; }
 .legend { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: 13px; }
 .legend li { display: flex; align-items: center; gap: 8px; }
@@ -130,8 +128,6 @@ input[type="number"] { -moz-appearance: textfield; }
 .nego-sub { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
 @media (max-width: 520px) { .legend li { flex-wrap: wrap; } .legend b { margin-left: 22px; width: 100%; text-align: left; font-weight: 600; } }
 .bar-mark.price { border-left: 3px solid var(--accent-dk); margin-left: -1.5px; }
-.bar-mark.price span { position: absolute; top: 100%; right: 0; margin-top: 4px; white-space: nowrap; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-dk); font-weight: 700; }
-.bar-mark.price.flip span { right: auto; left: -3px; }
 .bar-mark[hidden], .bar-zone[hidden] { display: none; }
 .sw-price { border-left: 3px solid var(--accent-dk); width: 0; height: 16px; margin: 0 5px; border-radius: 0; }
 .viz .bar-scale { margin-top: 22px; }
@@ -146,6 +142,32 @@ input[type="number"] { -moz-appearance: textfield; }
 .mb-val { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent-dk); }
 .mb-val.low { color: #b45309; }
 @media (max-width: 520px) { .marge-box { grid-template-columns: 1fr; } }
+@media print { *, *::before, *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .nav-bar { display: none; } }
+.viz { padding-top: 0; }
+.bar-wrap { position: relative; padding: 26px 0 26px; }
+.viz .bar { height: 42px; }
+.viz .bar-scale { margin-top: 2px; }
+.bseg { position: absolute; top: 0; bottom: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.bseg[hidden] { display: none; }
+.sl { display: flex; flex-direction: column; align-items: center; line-height: 1.1; color: #fff; white-space: nowrap; padding: 0 4px; }
+.sl em { font-style: normal; font-family: var(--mono); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; opacity: .9; }
+.sl b { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sl.dark { color: var(--ink-soft); }
+.sl.amber { color: #92400e; }
+.sl.off { visibility: hidden; }
+.sl.compact em { display: none; }
+.sl.compact b { font-size: 11px; }
+.bar-pot { background: repeating-linear-gradient(45deg, #fde7c4 0 6px, #fbd38d 6px 12px); border: 1.5px dashed #d97706; border-left: none; border-radius: 0 6px 6px 0; }
+.bar-mark .ml { position: absolute; white-space: nowrap; font-family: var(--mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; font-weight: 700; left: -2px; }
+.bar-mark .ml.up { bottom: 100%; margin-bottom: 4px; }
+.bar-mark .ml.down { top: 100%; margin-top: 4px; }
+.bar-mark .ml.end { left: auto; right: -1px; }
+.bar-mark .ml.off { visibility: hidden; }
+.bar-mark.other .ml { color: #7f1d1d; }
+.bar-mark.price .ml { color: var(--accent-dk); }
+.bar-mark.rcp .ml { color: var(--navy); }
+.legend:empty, .legend:not(:has(li:not([hidden]))) { display: none; }
+.notes li.upside { background: #fef3e8; color: #92400e; border: 1.5px solid #f4a261; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -204,24 +226,27 @@ input[type="number"] { -moz-appearance: textfield; }
     </div>
 
     <div class="viz" id="viz" hidden>
-      <div class="bar" id="bar" role="img" aria-label="">
-        <div class="bar-cost" id="bar-achat"></div>
-        <div class="bar-com" id="bar-com"></div>
-        <div class="bar-zone" id="bar-zone"></div>
-        <div class="bar-tva" id="bar-tva"></div>
-        <div class="bar-mark other" id="bar-other"></div>
-        <div class="bar-mark price" id="bar-price"><span>Prix HB</span></div>
-        <div class="bar-mark rcp" id="bar-rcp"><span>Conseillé Twindis</span></div>
+      <div class="bar-wrap">
+        <div class="bar" id="bar" role="img" aria-label="">
+          <div class="bseg bar-cost" id="bar-achat"><span class="sl"><em>Achat</em><b id="bl-achat"></b></span></div>
+          <div class="bseg bar-com" id="bar-com"><span class="sl"><em>Commission</em><b id="bl-com"></b></span></div>
+          <div class="bseg bar-zone" id="bar-zone"><span class="sl"><em>Marge</em><b id="bl-marge"></b></span></div>
+          <div class="bseg bar-tva" id="bar-tva"><span class="sl dark"><em>TVA</em><b id="bl-tva"></b></span></div>
+          <div class="bseg bar-pot" id="bar-pot" hidden><span class="sl amber"><em>Potentiel</em><b id="bl-pot"></b></span></div>
+          <div class="bar-mark other" id="bar-other"><span class="ml" id="ml-other"></span></div>
+          <div class="bar-mark price" id="bar-price"><span class="ml" id="ml-price"></span></div>
+          <div class="bar-mark rcp" id="bar-rcp"><span class="ml" id="ml-rcp"></span></div>
+        </div>
       </div>
       <div class="bar-scale"><span>0 €</span><span id="bar-max"></span></div>
-      <ul class="legend">
-        <li><i class="sw sw-cost"></i><span>Prix d'achat Twindis HT</span><b id="lg-achat">–</b></li>
-        <li><i class="sw sw-com"></i><span>Commission EBSC (15 %)</span><b id="lg-com">–</b></li>
-        <li id="lg-other-row" hidden><i class="sw sw-other"></i><span>Prix d'achat autre fournisseur HT</span><b id="lg-other">–</b></li>
-        <li><i class="sw sw-zone"></i><span>Marge magasin après commission HT</span><b id="lg-marge">–</b></li>
-        <li><i class="sw sw-tva"></i><span>TVA (20 %)</span><b id="lg-tva">–</b></li>
-        <li><i class="sw sw-price"></i><span>Prix de vente conseillé Holland Bikes TTC</span><b id="lg-price">–</b></li>
-        <li><i class="sw sw-rcp"></i><span>Prix de vente conseillé Twindis TTC</span><b id="lg-rcp">–</b></li>
+      <ul class="legend" id="legend">
+        <li id="lg-achat-row"><i class="sw sw-cost"></i><span>Prix d'achat Twindis HT</span><b id="lg-achat">–</b></li>
+        <li id="lg-com-row"><i class="sw sw-com"></i><span>Commission EBSC (15 %)</span><b id="lg-com">–</b></li>
+        <li id="lg-marge-row"><i class="sw sw-zone"></i><span>Marge magasin après commission HT</span><b id="lg-marge">–</b></li>
+        <li id="lg-tva-row"><i class="sw sw-tva"></i><span>TVA (20 %)</span><b id="lg-tva">–</b></li>
+        <li id="lg-other-row"><i class="sw sw-other"></i><span>Prix d'achat autre fournisseur HT</span><b id="lg-other">–</b></li>
+        <li id="lg-price-row"><i class="sw sw-price"></i><span>Prix de vente conseillé Holland Bikes TTC</span><b id="lg-price">–</b></li>
+        <li id="lg-rcp-row"><i class="sw sw-rcp"></i><span>Prix de vente conseillé Twindis TTC</span><b id="lg-rcp">–</b></li>
       </ul>
     </div>
 
@@ -262,7 +287,7 @@ input[type="number"] { -moz-appearance: textfield; }
 </main>
 
 <script>
-const P = { coef:2, com:0.15, ecoTtc:15, livraison:25.35, tva:0.20 };
+const P = { coef:2, seuilBas:0.6, com:0.15, ecoTtc:15, livraison:25.35, tva:0.20 };
 const FIELDS = ['achat','conseille','autre'];
 const $ = id => document.getElementById(id);
 const eur = (v, d=2) => v.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}) + ' €';
@@ -289,32 +314,69 @@ function compute(achat, conseille, autre){
     autreMoinsCher: autre !== null && autre < facture };
 }
 
-function drawBar(r, achat, autre, conseille){
-  const max = Math.max(conseille || 0, r.prix, r.facture, autre || 0);
+function placeMarks(){
+  // Étiquettes des repères : en haut ou en bas, sans chevauchement
+  const marks = ['bar-rcp','bar-other','bar-price'].map(id => $(id)).filter(m => !m.hidden);
+  const bar = $('bar').getBoundingClientRect();
+  const placed = { up: [], down: [] };
+  const pref = { 'bar-rcp':['up','down'], 'bar-other':['up','down'], 'bar-price':['down','up'] };
+  marks.forEach(m => {
+    const l = m.querySelector('.ml'); l.classList.remove('off','up','down','end');
+    let ok = false;
+    for (const row of pref[m.id]){
+      l.classList.remove('up','down','end'); l.classList.add(row);
+      let r = l.getBoundingClientRect();
+      if (r.right > bar.right + 1){ l.classList.add('end'); r = l.getBoundingClientRect(); }
+      if (!placed[row].some(o => r.left < o.right + 6 && r.right > o.left - 6)){ placed[row].push(r); ok = true; break; }
+    }
+    if (!ok) l.classList.add('off');
+  });
+  return marks.filter(m => m.querySelector('.ml').classList.contains('off')).map(m => m.id);
+}
+function fitSegs(){
+  // Libellé dans un segment seulement s'il tient
+  const res = {};
+  ['bar-achat','bar-com','bar-zone','bar-tva','bar-pot'].forEach(id => {
+    const seg = $(id), l = seg.querySelector('.sl');
+    l.classList.remove('off','compact');
+    let fits = !seg.hidden && l.scrollWidth + 4 <= seg.clientWidth;
+    if (!fits && !seg.hidden){ l.classList.add('compact'); fits = l.scrollWidth + 4 <= seg.clientWidth; }
+    if (!fits) l.classList.add('off');
+    res[id] = fits || seg.hidden;
+  });
+  return res;
+}
+
+function drawBar(r, achat, autre, conseille, pot){
+  const max = Math.max(conseille || 0, r.prix, r.facture, autre || 0, pot || 0);
   const pc = v => (v / max * 100).toFixed(2) + '%';
-  $('bar-achat').style.width = pc(achat);
-  $('bar-com').style.left = pc(achat); $('bar-com').style.width = pc(r.com);
-  $('bar-zone').hidden = r.ht <= r.facture;
-  $('bar-zone').style.left = pc(r.facture); $('bar-zone').style.width = pc(Math.max(r.ht - r.facture, 0));
+  const box = (id, from, w) => { $(id).style.left = pc(from); $(id).style.width = pc(Math.max(w, 0)); };
+  $('bar-achat').style.left = '0'; $('bar-achat').style.width = pc(achat);
+  box('bar-com', achat, r.com);
+  $('bar-zone').hidden = r.ht <= r.facture; box('bar-zone', r.facture, r.ht - r.facture);
+  box('bar-tva', r.ht, r.prix - r.ht);
+  $('bar-pot').hidden = !pot; if (pot) box('bar-pot', r.prix, pot - r.prix);
+  $('bl-achat').textContent = eurR(Math.round(achat)); $('bl-com').textContent = eurR(Math.round(r.com));
+  $('bl-marge').textContent = eurR(Math.round(Math.max(r.marge2, 0))); $('bl-tva').textContent = eurR(Math.round(r.prix - r.ht));
+  if (pot) $('bl-pot').textContent = '+' + eurR(Math.round(pot - r.prix));
   $('bar-other').hidden = autre === null;
-  if (autre !== null) $('bar-other').style.left = pc(autre);
-  $('bar-price').style.left = pc(r.prix);
-  $('bar-price').classList.toggle('flip', r.prix / max < 0.75);
+  if (autre !== null){ $('bar-other').style.left = pc(autre); $('ml-other').textContent = `Autre fourn. ${eurR(autre)} HT`; }
+  $('bar-price').style.left = pc(r.prix); $('ml-price').textContent = `Prix HB ${eurR(r.prix)}`;
   $('bar-rcp').hidden = conseille === null;
-  if (conseille !== null) $('bar-rcp').style.left = pc(conseille);
-  $('bar-rcp').classList.toggle('flip', conseille !== null && conseille / max < 0.75);
+  if (conseille !== null){ $('bar-rcp').style.left = pc(conseille); $('ml-rcp').textContent = `Conseillé Twindis ${eurR(conseille)}`; }
   $('bar-max').textContent = eurR(Math.round(max));
-  $('lg-achat').textContent = eur(achat);
-  $('lg-com').textContent = eur(r.com);
-  $('lg-other-row').hidden = autre === null;
+  // légende de secours : seulement ce qui n'a pas pu être écrit sur la barre
+  $('lg-achat').textContent = eur(achat); $('lg-com').textContent = eur(r.com);
+  $('lg-marge').textContent = eur(Math.max(r.marge2, 0)); $('lg-tva').textContent = eur(r.prix - r.ht);
   if (autre !== null) $('lg-other').textContent = eur(autre);
-  $('lg-marge').textContent = eur(Math.max(r.marge2, 0));
-  $('lg-tva').textContent = eur(r.prix - r.ht);
-  $('bar-tva').style.left = pc(r.ht); $('bar-tva').style.width = pc(r.prix - r.ht);
-  $('lg-price').textContent = r.plafonne ? `${eurR(r.prix)} (plafonné)` : eurR(r.prix);
-  $('lg-rcp').textContent = conseille !== null ? eurR(conseille) : '–';
-  $('bar').setAttribute('aria-label', `Prix d'achat ${eur(achat)} HT, commission ${eur(r.com)}, prix de vente Holland Bikes ${eurR(r.prix)} TTC` + (conseille !== null ? `, prix conseillé Twindis ${eurR(conseille)} TTC` : ''));
   $('viz').hidden = false;
+  const fit = fitSegs(), offMarks = placeMarks();
+  $('lg-achat-row').hidden = fit['bar-achat']; $('lg-com-row').hidden = fit['bar-com'];
+  $('lg-marge-row').hidden = fit['bar-zone']; $('lg-tva-row').hidden = fit['bar-tva'];
+  $('lg-other-row').hidden = autre === null || !offMarks.includes('bar-other');
+  $('lg-price').textContent = eurR(r.prix); $('lg-price-row').hidden = !offMarks.includes('bar-price');
+  $('lg-rcp').textContent = conseille !== null ? eurR(conseille) : '–'; $('lg-rcp-row').hidden = conseille === null || !offMarks.includes('bar-rcp');
+  $('bar').setAttribute('aria-label', `Prix d'achat ${eur(achat)} HT, commission ${eur(r.com)}, marge ${eur(Math.max(r.marge2,0))}, TVA ${eur(r.prix - r.ht)}, prix Holland Bikes ${eurR(r.prix)} TTC` + (conseille !== null ? `, prix conseillé Twindis ${eurR(conseille)} TTC` : '') + (pot ? `, potentiel jusqu'à ${eurR(pot)}` : ''));
 }
 
 let lastText = '';
@@ -344,7 +406,20 @@ function render(){
   set('m-coef', fmt(r.coef)); set('m-eur', eur(r.marge)); set('m-pct', `${fmt(r.pct, 0)} %`);
   $('m-coef').className = 'mb-val' + (r.coef < P.coef - 0.005 ? ' low' : '');
   $('marge-box').hidden = false;
-  drawBar(r, achat, autre, conseille);
+  // Argent laissé sur la table ?
+  const viaAutre = autre !== null ? roundUp(autre * P.coef) : null;
+  let pot = null, potWhy = '';
+  if (r.marge2 > 0 && !r.plafonne){
+    const cap = conseille !== null ? conseille : Infinity;
+    if (viaAutre !== null && autre > r.facture && viaAutre > r.prix){
+      pot = Math.min(viaAutre, cap);
+      potWhy = `chez l'autre fournisseur (${eur(autre)} HT), le même calcul × 2 donnerait ${eurR(viaAutre)}`;
+    } else if (conseille !== null && r.prix < P.seuilBas * conseille){
+      pot = conseille;
+      potWhy = `le prix HB n'est qu'à ${Math.round(r.prix / conseille * 100)} % du prix conseillé Twindis (${eurR(conseille)})`;
+    }
+  }
+  drawBar(r, achat, autre, conseille, pot);
 
   if (conseille === null) notes.push(['info', 'Saisissez le prix de vente conseillé Twindis : le prix de vente ne doit jamais le dépasser.']);
   let decision = 'Twindis';
@@ -353,6 +428,9 @@ function render(){
     notes.unshift(['stop', `Au prix conseillé (${eurR(r.prix)}), le prix de vente HT ne couvre pas l'achat + la commission EBSC (${eur(r.facture)}). Ne commandez pas chez Twindis.`]);
   } else if (r.autreMoinsCher){
     pill.className = 'score-badge warn-badge'; pill.textContent = '● Autre fournisseur moins cher';
+  } else if (pot){
+    pill.className = 'score-badge warn-badge'; pill.textContent = '● Prix peut-être trop bas';
+    notes.unshift(['upside', `Argent laissé sur la table ? ${potWhy.charAt(0).toUpperCase() + potWhy.slice(1)}. Le marché est probablement plus haut que ${eurR(r.prix)} : vérifiez le prix du marché ou demandez à EBSC avant de fixer le prix (jusqu'à ${eurR(pot)} maximum, sans dépasser le prix conseillé).`]);
   } else if (r.plafonne){
     pill.className = 'score-badge warn-badge'; pill.textContent = `● Coef ${fmt(r.coef)} (plafonné)`;
     notes.push(['info', `2 × le prix d'achat dépasse le prix conseillé Twindis : on vend au prix conseillé, avec un coefficient de ${fmt(r.coef)} au lieu de 2.`]);
