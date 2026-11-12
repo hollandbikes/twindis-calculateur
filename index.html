@@ -170,6 +170,14 @@ input[type="number"] { -moz-appearance: textfield; }
 .bar-mark.rcp .ml { color: var(--navy); }
 .legend:empty, .legend:not(:has(li:not([hidden]))) { display: none; }
 .notes li.upside { background: #fef3e8; color: #92400e; border: 1.5px solid #f4a261; font-weight: 600; }
+.bseg, .bar-mark { cursor: default; }
+.bseg:hover, .bseg:focus-visible { filter: brightness(1.08); outline: none; }
+.bar-mark::before { content: ''; position: absolute; top: 0; bottom: 0; left: -8px; width: 16px; }
+.bar-tip { position: absolute; z-index: 5; transform: translate(-50%, -100%); margin-top: -8px; background: var(--ink); color: #fff; font-size: 12px; line-height: 1.35; padding: 7px 10px; border-radius: 6px; white-space: nowrap; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+.bar-tip b { font-variant-numeric: tabular-nums; }
+.bar-tip small { display: block; opacity: .75; font-size: 11px; }
+.bar-tip::after { content: ''; position: absolute; left: 50%; top: 100%; margin-left: -5px; border: 5px solid transparent; border-top-color: var(--ink); }
+.bar-tip[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -239,6 +247,7 @@ input[type="number"] { -moz-appearance: textfield; }
           <div class="bar-mark price" id="bar-price"><span class="ml" id="ml-price"></span></div>
           <div class="bar-mark rcp" id="bar-rcp"><span class="ml" id="ml-rcp"></span></div>
         </div>
+        <div class="bar-tip" id="bar-tip" role="tooltip" hidden></div>
       </div>
       <div class="bar-scale"><span>0 €</span><span id="bar-max"></span></div>
       <ul class="legend" id="legend">
@@ -371,6 +380,17 @@ function drawBar(r, achat, autre, conseille, pot){
   $('lg-achat').textContent = eur(achat); $('lg-com').textContent = eur(r.com);
   $('lg-marge').textContent = eur(Math.max(r.marge2, 0)); $('lg-tva').textContent = eur(r.prix - r.ht);
   if (autre !== null) $('lg-other').textContent = eur(autre);
+  const tips = {
+    'bar-achat': ['Prix d\'achat Twindis HT', eur(achat), ''],
+    'bar-com': ['Commission EBSC (15 %)', eur(r.com), '15 % du prix d\'achat HT'],
+    'bar-zone': ['Marge magasin après commission HT', eur(Math.max(r.marge2, 0)), 'Prix de vente HT – (achat + commission)'],
+    'bar-tva': ['TVA (20 %)', eur(r.prix - r.ht), ''],
+    'bar-pot': ['Potentiel non exploité', pot ? '+' + eur(pot - r.prix) : '', pot ? `Jusqu'à ${eurR(pot)} TTC` : ''],
+    'bar-other': ['Prix d\'achat autre fournisseur HT', autre !== null ? eur(autre) : '', ''],
+    'bar-price': ['Prix de vente conseillé Holland Bikes TTC', eurR(r.prix), r.plafonne ? 'Plafonné au prix conseillé' : '2 × le prix d\'achat HT'],
+    'bar-rcp': ['Prix de vente conseillé Twindis TTC', conseille !== null ? eurR(conseille) : '', ''],
+  };
+  Object.entries(tips).forEach(([id, t]) => { const el = $(id); el.dataset.tip = JSON.stringify(t); el.tabIndex = 0; el.setAttribute('aria-label', `${t[0]} : ${t[1]}`); });
   $('viz').hidden = false;
   const fit = fitSegs(), offMarks = placeMarks();
   $('lg-achat-row').hidden = fit['bar-achat']; $('lg-com-row').hidden = fit['bar-com'];
@@ -458,6 +478,34 @@ function render(){
     autre !== null ? `Autre fournisseur HT : ${eur(autre)} → commander chez ${decision}` : ''
   ].filter(Boolean).join('\n');
 }
+
+// Infobulle au survol (souris), au focus (clavier) et au toucher
+(function(){
+  const wrap = document.querySelector('.bar-wrap'), tip = $('bar-tip');
+  const targets = () => wrap.querySelectorAll('[data-tip]');
+  function show(el, x){
+    const [title, val, sub] = JSON.parse(el.dataset.tip || '[]');
+    if (!title) return;
+    tip.innerHTML = '';
+    const t = document.createElement('span'); t.textContent = title + ' : ';
+    const b = document.createElement('b'); b.textContent = val;
+    tip.append(t, b);
+    if (sub){ const sm = document.createElement('small'); sm.textContent = sub; tip.append(sm); }
+    tip.hidden = false;
+    const w = wrap.getBoundingClientRect(), e = el.getBoundingClientRect(), bar = $('bar').getBoundingClientRect();
+    let left = (x != null ? x : e.left + e.width / 2) - w.left;
+    const half = tip.offsetWidth / 2;
+    left = Math.max(half, Math.min(w.width - half, left));
+    tip.style.left = left + 'px';
+    tip.style.top = (bar.top - w.top) + 'px';
+  }
+  const hide = () => { tip.hidden = true; };
+  wrap.addEventListener('mousemove', e => { const el = e.target.closest('[data-tip]'); el && !el.hidden ? show(el, e.clientX) : hide(); });
+  wrap.addEventListener('mouseleave', hide);
+  wrap.addEventListener('focusin', e => { const el = e.target.closest('[data-tip]'); if (el) show(el); });
+  wrap.addEventListener('focusout', hide);
+  wrap.addEventListener('click', e => { const el = e.target.closest('[data-tip]'); el ? show(el, e.clientX) : hide(); });
+})();
 
 FIELDS.forEach(id => $(id).addEventListener('input', () => { $('example-note').hidden = true; render(); }));
 document.querySelectorAll('input[name="type"]').forEach(el => el.addEventListener('change', () => { $('example-note').hidden = true; render(); }));
